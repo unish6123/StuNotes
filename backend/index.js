@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
-
+import 'dotenv/config';
+import connectDb from "./config/mongoDb.js";
 
 
 
@@ -8,6 +9,7 @@ import cors from "cors";
 const app = express();
 
 const port = process.env.PORT || 4000;
+connectDb();
 
 
 const allowedOrigins = ['http://localhost:5173']
