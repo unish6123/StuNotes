@@ -1,7 +1,7 @@
 import userModel from "../model/userModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-// import transporter from "../config/nodeMailer.js";
+import transporter from "../config/nodeMailer.js";
 
 
 export const signUp = async (req, res) => {
@@ -31,6 +31,39 @@ export const signUp = async (req, res) => {
                 sameSite: 'none',
                 maxAge: 7 * 24 * 60 * 60 * 1000
             })
+
+            await transporter.sendMail({
+                from: process.env.SENDER_EMAIL,
+                to: email,
+                subject: 'Welcome to StuNotes 🎉',
+                html: `
+                  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; background: #f9f9f9; padding: 20px; border-radius: 10px;">
+                    <div style="text-align: center; padding: 10px 0;">
+                      <h1 style="color: #4CAF50;">Welcome to <span style="color: #2c3e50;">StuNotes</span> 🎓</h1>
+                    </div>
+                    <div style="background: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                      <p style="font-size: 16px; color: #333;">Hello <b>${name}</b>,</p>
+                      <p style="font-size: 15px; color: #555;">
+                        Thank you for signing up with <b>${email}</b>. 
+                        We’re excited to have you on board and we’re confident StuNotes will make your study easier and more effective. 🚀
+                      </p>
+                      <p style="font-size: 15px; color: #555;">
+                        Explore our resources, take notes, and organize your study better.
+                      </p>
+                      <div style="text-align: center; margin-top: 20px;">
+                        <a href="https://stunotes.com" 
+                           style="background: #4CAF50; color: white; text-decoration: none; padding: 12px 20px; border-radius: 6px; display: inline-block; font-weight: bold;">
+                          Get Started
+                        </a>
+                      </div>
+                    </div>
+                    <p style="text-align: center; font-size: 12px; color: #888; margin-top: 20px;">
+                      © ${new Date().getFullYear()} StuNotes. All rights reserved.
+                    </p>
+                  </div>
+                `
+            })
+            
 
             return res.json({ success: true, message: "User signed up successfully." })
 
