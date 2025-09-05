@@ -79,3 +79,70 @@ export const signUp = async (req, res) => {
 
     }
 }
+
+export const signIn = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+      return res.status(400).json({ success: false, message: "Email and password are required." });
+  }
+
+  try {
+      const user = await userModel.findOne({ email });
+
+      if (!user) {
+          return res.status(401).json({ success: false, message: "The user doesn't exist." });
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+
+      if (!isMatch) {
+          return res.status(401).json({ success: false, message: "Invalid password." });
+      }
+
+      // Generate JWT token
+      const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '30d' });
+
+      // Set the cookie
+      res.cookie('token', token, {
+          httpOnly: true,
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
+      // // Respond with user data and token
+      return res.status(200).json({
+          user: {
+              name: user.name,
+              email: user.email,
+              
+              id: user._id
+          },
+          token
+      });;
+
+  } catch (error) {
+      console.error("SignIn Error:", error);
+      return res.status(422).json({ success: false, message: error.message });
+  }
+};
+
+
+const signOut = async (req, res) => {
+  try {
+      res.clearCookie('token', {
+          httpOnly: true,
+          secure: process.env.NODE_ENV !== 'development',
+          sameSite: 'none',
+      })
+
+      return res.json({ succes: true, message: "User signed out successfully." })
+
+  }
+  catch (error) {
+      res.json({ success: false, message: error.message });
+  }
+}
+
+export {
+  signOut
+}
