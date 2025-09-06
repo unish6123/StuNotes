@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import transporter from "../config/nodeMailer.js";
 
 
-export const signUp = async (req, res) => {
+const signUp = async (req, res) => {
     try {
         const { name, email, password } = req.body;
         if (!name || !email || !password) {
@@ -80,7 +80,7 @@ export const signUp = async (req, res) => {
     }
 }
 
-export const signIn = async (req, res) => {
+const signIn = async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -144,5 +144,5 @@ const signOut = async (req, res) => {
 }
 
 export {
-  signOut
+  signOut, signIn, signUp
 }
