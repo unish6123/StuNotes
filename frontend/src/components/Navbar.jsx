@@ -14,7 +14,7 @@ import {
   Monitor,
   Menu,
   X,
-  BookOpen,
+  GraduationCap,
   Mic,
   FileText,
   Sparkles,
@@ -28,7 +28,7 @@ export default function Navbar() {
   const location = useLocation();
 
   const navigation = [
-    { name: "Home", href: "/", icon: BookOpen },
+    { name: "Home", href: "/", icon: GraduationCap },
     { name: "Transcribe", href: "/transcribe", icon: Mic },
     { name: "Notes", href: "/notes", icon: FileText },
     { name: "Enhance", href: "/enhance", icon: Sparkles },
@@ -46,7 +46,7 @@ export default function Navbar() {
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <BookOpen className="h-5 w-5 text-primary-foreground" />
+                <GraduationCap className="h-5 w-5 text-primary-foreground" />
               </div>
               <span className="text-xl font-bold text-foreground">
                 StuNotes
