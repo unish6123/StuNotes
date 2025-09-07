@@ -143,6 +143,85 @@ const signOut = async (req, res) => {
   }
 }
 
+const sendForgotPasswordOtp = async (req, res) => {
+  try {
+      const { email } = req.body;
+      const user = await userModel.findOne({ email })
+      user.resetOtp = "";
+      await user.save();
+
+      if (!email) {
+          return res.json({ success: false, message: "Missing email address." })
+      }
+
+      if (!user) {
+          return res.json({ success: false, message: "This user doesn't exist." })
+      }
+
+
+
+      const otp = String(Math.floor(100000 + Math.random() * 900000))
+
+      user.resetOtp = otp;
+      await user.save();
+      user.resetOtpExpireAt = Date.now() + 5 * 60 * 1000
+
+      await user.save();
+
+      await transporter.sendMail({
+        from: process.env.SENDER_EMAIL,
+        to: email,
+        subject: "🔐 StuNotes Password Reset Code",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 500px; margin: auto; background: #f9f9f9; padding: 20px; border-radius: 10px;">
+            
+            <!-- Header -->
+            <div style="text-align: center; padding: 15px; background: #4CAF50; border-radius: 8px 8px 0 0;">
+              <h2 style="color: white; margin: 0;">StuNotes Password Reset</h2>
+            </div>
+      
+            <!-- Body -->
+            <div style="background: #ffffff; padding: 25px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+              <p style="font-size: 16px; color: #333;">Hi <b>${user.name}</b>,</p>
+      
+              <p style="font-size: 15px; color: #555; line-height: 1.6;">
+                You requested to reset your StuNotes account password. Use the verification code below:
+              </p>
+      
+              <!-- OTP Box -->
+              <div style="text-align: center; margin: 25px 0;">
+                <span style="display: inline-block; font-size: 28px; letter-spacing: 6px; font-weight: bold; color: #4CAF50; padding: 12px 20px; border: 2px dashed #4CAF50; border-radius: 8px;">
+                  ${otp}
+                </span>
+              </div>
+      
+              <p style="font-size: 14px; color: #555;">
+                This code will expire in <b>5 minutes</b>. Please do not share this code with anyone.
+              </p>
+      
+              <p style="font-size: 14px; color: #999; margin-top: 20px;">
+                If you didn’t request this, you can ignore this email safely.
+              </p>
+            </div>
+      
+            <!-- Footer -->
+            <p style="text-align: center; font-size: 12px; color: #aaa; margin-top: 15px;">
+              © ${new Date().getFullYear()} StuNotes. All rights reserved.
+            </p>
+          </div>
+        `,
+      });
+      
+      
+
+      return res.json({ success: true, message: `Verification otp sent to your email.` })
+
+
+  } catch (error) {
+      return res.json({ success: false, message: error.message })
+  }
+}
+
 export {
-  signOut, signIn, signUp
+  signOut, signIn, signUp, sendForgotPasswordOtp
 }
