@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Eye,
   EyeOff,
@@ -20,8 +20,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SignUpSkeleton } from "@/components/skeletons/AuthSkeleton";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 export default function SignUp() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -37,10 +38,13 @@ export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
+  const { signUp } = useAuth();
+  const navigate = useNavigate();
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsInitialLoading(false);
-    }, 800); // Show skeleton for 800ms
+    }, 800);
 
     return () => clearTimeout(timer);
   }, []);
@@ -52,7 +56,6 @@ export default function SignUp() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -103,12 +106,25 @@ export default function SignUp() {
 
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const result = await signUp(
+        formData.name,
+        formData.email,
+        formData.password
+      );
+      if (result.success) {
+        toast.success("Account created successfully! Welcome to StuNotes.");
+        navigate("/dashboard");
+      } else {
+        toast.error(result.message || "Sign up failed. Please try again.");
+        setErrors({ general: result.message || "Sign up failed" });
+      }
+    } catch (error) {
+      toast.error(error.message || "Sign up failed. Please try again.");
+      setErrors({ general: error.message || "Sign up failed" });
+    } finally {
       setIsLoading(false);
-      console.log("Sign up attempt:", formData);
-      // Handle successful sign up here
-    }, 2000);
+    }
   };
 
   const getPasswordStrength = () => {
@@ -147,7 +163,6 @@ export default function SignUp() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
-        {/* Logo and Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <div className="bg-primary p-3 rounded-xl">
@@ -174,6 +189,12 @@ export default function SignUp() {
 
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
+              {errors.general && (
+                <div className="p-3 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-md">
+                  {errors.general}
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm font-medium">
                   Full Name
@@ -260,14 +281,13 @@ export default function SignUp() {
                   </button>
                 </div>
 
-                {/* Password Strength Indicator */}
                 {formData.password && (
                   <div className="space-y-2">
                     <div className="flex space-x-1">
                       {[1, 2, 3, 4, 5].map((level) => (
                         <div
                           key={level}
-                          className={`h-1 flex-1 rounded ${
+                          className={`h-2 flex-1 rounded ${
                             level <= passwordStrength.strength
                               ? passwordStrength.color
                               : "bg-gray-200 dark:bg-gray-700"
@@ -328,7 +348,7 @@ export default function SignUp() {
                   formData.password === formData.confirmPassword && (
                     <div className="flex items-center space-x-1 text-green-600 dark:text-green-400">
                       <Check className="h-3 w-3" />
-                      <span className="text-xs">Passwords match</span>
+                      <span className="text-xs font-bold">Passwords match</span>
                     </div>
                   )}
                 {errors.confirmPassword && (
@@ -404,14 +424,6 @@ export default function SignUp() {
             </CardFooter>
           </form>
         </Card>
-
-        {/* Demo Alert */}
-        <Alert className="mt-6 border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20">
-          <AlertDescription className="text-emerald-800 dark:text-emerald-200">
-            <strong>Demo Mode:</strong> All form validations are active, but no
-            actual account will be created
-          </AlertDescription>
-        </Alert>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, GraduationCap, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SignInSkeleton } from "@/components/skeletons/AuthSkeleton";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 export default function SignIn() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -25,10 +26,13 @@ export default function SignIn() {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
+  const { signIn } = useAuth();
+  const navigate = useNavigate();
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsInitialLoading(false);
-    }, 800); // Show skeleton for 800ms
+    }, 800);
 
     return () => clearTimeout(timer);
   }, []);
@@ -40,7 +44,6 @@ export default function SignIn() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -72,18 +75,28 @@ export default function SignIn() {
 
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const result = await signIn(formData.email, formData.password);
+      if (result.success) {
+        toast.success("Welcome back! You've been signed in successfully.");
+        navigate("/dashboard");
+      } else {
+        toast.error(
+          result.message || "Sign in failed. Please check your credentials."
+        );
+        setErrors({ general: result.message || "Sign in failed" });
+      }
+    } catch (error) {
+      toast.error(error.message || "Sign in failed. Please try again.");
+      setErrors({ general: error.message || "Sign in failed" });
+    } finally {
       setIsLoading(false);
-      console.log("Sign in attempt:", formData);
-      // Handle successful sign in here
-    }, 1500);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
-        {/* Logo and Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <div className="bg-primary p-3 rounded-xl">
@@ -110,6 +123,12 @@ export default function SignIn() {
 
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
+              {errors.general && (
+                <div className="p-3 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-md">
+                  {errors.general}
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium">
                   Email
@@ -227,13 +246,6 @@ export default function SignIn() {
             </CardFooter>
           </form>
         </Card>
-
-        {/* Demo Alert */}
-        <Alert className="mt-6 border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20">
-          <AlertDescription className="text-emerald-800 dark:text-emerald-200">
-            <strong>Demo Mode:</strong> Use any email and password to sign in
-          </AlertDescription>
-        </Alert>
       </div>
     </div>
   );
