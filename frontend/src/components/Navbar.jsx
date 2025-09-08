@@ -46,7 +46,7 @@ export default function Navbar() {
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <GraduationCap className="h-5 w-5 text-primary-foreground" />
+                <GraduationCap className="h-5 w-5 text-white" />
               </div>
               <span className="text-xl font-bold text-foreground">
                 StuNotes
@@ -64,7 +64,7 @@ export default function Navbar() {
                   to={item.href}
                   className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     isActive(item.href)
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-primary text-white"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent"
                   }`}
                 >
@@ -107,7 +107,7 @@ export default function Navbar() {
               <Button variant="ghost" asChild>
                 <Link to="/sign-in">Sign In</Link>
               </Button>
-              <Button asChild>
+              <Button asChild className="text-white">
                 <Link to="/sign-up">Sign Up</Link>
               </Button>
             </div>

@@ -86,9 +86,9 @@ export default function Home() {
             and achieve better results.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild>
+            <Button size="lg" asChild className="text-white">
               <Link to="/sign-up">
-                Get Started Free
+                Get Started
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
@@ -159,25 +159,6 @@ export default function Home() {
               );
             })}
           </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-primary">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
-            Ready to Revolutionize Your Studies?
-          </h2>
-          <p className="text-xl text-primary-foreground/90 mb-8">
-            Join thousands of students who are already studying smarter with
-            StuNotes
-          </p>
-          <Button size="lg" variant="secondary" asChild>
-            <Link to="/sign-up">
-              Start Your Free Trial
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-          </Button>
         </div>
       </section>
     </div>
