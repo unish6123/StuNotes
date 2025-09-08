@@ -15,7 +15,7 @@ export function AuthProvider({ children }) {
       // Check if user is authenticated by verifying the HTTP-only cookie
       const response = await fetch("http://localhost:4000/api/auth/verify", {
         method: "GET",
-        credentials: "include", // Include cookies
+        credentials: "include",
       });
 
       if (response.ok) {
@@ -42,7 +42,7 @@ export function AuthProvider({ children }) {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include", // Include cookies
+      credentials: "include",
       body: JSON.stringify({ email, password }),
     });
 
@@ -68,7 +68,7 @@ export function AuthProvider({ children }) {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include", // Include cookies
+      credentials: "include",
       body: JSON.stringify({ name, email, password }),
     });
 
