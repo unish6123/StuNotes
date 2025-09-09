@@ -165,7 +165,11 @@ export default function Transcribe() {
 
               <div className="flex justify-center gap-4">
                 {!isRecording ? (
-                  <Button onClick={startRecording} size="lg" className="gap-2">
+                  <Button
+                    onClick={startRecording}
+                    size="lg"
+                    className="gap-2 text-white cursor-pointer"
+                  >
                     <Mic className="h-5 w-5" />
                     Start Recording
                   </Button>
@@ -176,7 +180,7 @@ export default function Transcribe() {
                         onClick={pauseRecording}
                         variant="outline"
                         size="lg"
-                        className="gap-2 bg-transparent"
+                        className="gap-2 bg-transparent cursor-pointer"
                       >
                         <Pause className="h-5 w-5" />
                         Pause
@@ -185,7 +189,7 @@ export default function Transcribe() {
                       <Button
                         onClick={resumeRecording}
                         size="lg"
-                        className="gap-2"
+                        className="gap-2 cursor-pointer text-white"
                       >
                         <Play className="h-5 w-5" />
                         Resume
@@ -195,7 +199,7 @@ export default function Transcribe() {
                       onClick={stopRecording}
                       variant="destructive"
                       size="lg"
-                      className="gap-2"
+                      className="gap-2 cursor-pointer"
                     >
                       <Square className="h-5 w-5" />
                       Stop
@@ -236,7 +240,7 @@ export default function Transcribe() {
 
             {transcript && (
               <div className="flex gap-2">
-                <Button onClick={saveTranscript} className="gap-2">
+                <Button onClick={saveTranscript} className="gap-2 text-white">
                   <Save className="h-4 w-4" />
                   Save Transcript
                 </Button>
