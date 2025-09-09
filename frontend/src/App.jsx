@@ -3,6 +3,7 @@ import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import Transcribe from "./pages/Transcribe";
 import Footer from "./components/footer";
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -15,6 +16,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/sign-in" element={<SignIn />} />
           <Route path="/sign-up" element={<SignUp />} />
+          <Route path="/transcribe" element={<Transcribe />} />
         </Routes>
         <Footer></Footer>
       </ThemeProvider>
