@@ -8,6 +8,9 @@ import authRouter from "./routes/authRoutes.js"
 
 const app = express();
 
+console.log("Loaded MONGODB_URI:", JSON.stringify(process.env.MONGODB_URI));
+
+
 const port = process.env.PORT || 4000;
 connectDb();
 
