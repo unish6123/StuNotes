@@ -2,7 +2,8 @@ import noteModel from "../model/notesModel.js";
 
 const saveTNotes = async (req, res) =>{
     try {
-        const {userId, title, content} = req.body;
+        const { title, content} = req.body;
+        const userId = req.user.id;
 
         if ( !title || !content){
             return res.json({success:false, message: "missing title or content"})
@@ -15,4 +16,18 @@ const saveTNotes = async (req, res) =>{
     }
 }
 
-export default saveTNotes;
+
+
+const getSavedTNotes = async(req,res) =>{
+    try{
+        const userId = req.user.id;
+        const notes = await noteModel.find({
+            userId:userId
+        })
+        res.json({notes})
+    }catch(err){
+        return res.json({success:false, message: err.message})
+    }
+}
+
+export {saveTNotes, getSavedTNotes};
