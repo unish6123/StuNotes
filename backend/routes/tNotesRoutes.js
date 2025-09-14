@@ -1,5 +1,5 @@
 import express from 'express';
-import  { saveTNotes, getSavedTNotes } from '../controller/transcribeNoteController.js'
+import  { saveTNotes, getSavedTNotes, getQuiz } from '../controller/transcribeNoteController.js'
 import userAuth from '../middlewear/authMiddlewear.js';
 
 const tNotesRouter = express.Router();
@@ -7,5 +7,6 @@ const tNotesRouter = express.Router();
 
 tNotesRouter.post('/saveTranscribe',userAuth, saveTNotes);
 tNotesRouter.get('/getNotes',userAuth, getSavedTNotes);
+tNotesRouter.post('/getQuiz',userAuth, getQuiz);
 
 export default tNotesRouter;
