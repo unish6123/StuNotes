@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import Transcribe from "./pages/Transcribe";
+import Notes from "./pages/Notes";
 import Footer from "./components/footer";
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -17,6 +18,7 @@ function App() {
           <Route path="/sign-in" element={<SignIn />} />
           <Route path="/sign-up" element={<SignUp />} />
           <Route path="/transcribe" element={<Transcribe />} />
+          <Route path="/notes" element={<Notes />} />
         </Routes>
         <Footer></Footer>
       </ThemeProvider>
