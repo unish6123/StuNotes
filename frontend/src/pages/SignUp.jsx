@@ -359,30 +359,30 @@ export default function SignUp() {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-start space-x-2">
+                <div className="flex items-start space-x-3">
                   <input
                     id="terms"
                     type="checkbox"
                     checked={agreedToTerms}
                     onChange={(e) => setAgreedToTerms(e.target.checked)}
-                    className="mt-1 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                    className="mt-0.5 h-4 w-4 flex-shrink-0 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                     disabled={isLoading}
                   />
                   <Label
                     htmlFor="terms"
-                    className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed"
+                    className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-tight cursor-pointer whitespace-nowrap overflow-hidden"
                   >
                     I agree to the{" "}
                     <Link
                       to="/terms"
-                      className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
+                      className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 underline"
                     >
-                      Terms of Service
+                      Terms
                     </Link>{" "}
                     and{" "}
                     <Link
                       to="/privacy"
-                      className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
+                      className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 underline"
                     >
                       Privacy Policy
                     </Link>

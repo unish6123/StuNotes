@@ -33,22 +33,10 @@ export default function Footer() {
               Notes
             </Link>
             <Link
-              to="/enhance"
-              className="hover:text-emerald-600 transition-colors"
-            >
-              Enhance
-            </Link>
-            <Link
               to="/quizzes"
               className="hover:text-emerald-600 transition-colors"
             >
               Quizzes
-            </Link>
-            <Link
-              to="/dashboard"
-              className="hover:text-emerald-600 transition-colors"
-            >
-              Dashboard
             </Link>
           </div>
 
