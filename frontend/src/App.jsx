@@ -6,8 +6,9 @@ import SignUp from "./pages/SignUp";
 import Transcribe from "./pages/Transcribe";
 import Notes from "./pages/Notes";
 import Quizzes from "./pages/Quizzes";
-import Footer from "./components/footer";
+import Footer from "./components/Footer";
 import { ThemeProvider } from "@/components/theme-provider";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -18,9 +19,30 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/sign-in" element={<SignIn />} />
           <Route path="/sign-up" element={<SignUp />} />
-          <Route path="/transcribe" element={<Transcribe />} />
-          <Route path="/notes" element={<Notes />} />
-          <Route path="/quizzes" element={<Quizzes />} />
+          <Route
+            path="/transcribe"
+            element={
+              <ProtectedRoute>
+                <Transcribe />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notes"
+            element={
+              <ProtectedRoute>
+                <Notes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/quizzes"
+            element={
+              <ProtectedRoute>
+                <Quizzes />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
         <Footer></Footer>
       </ThemeProvider>

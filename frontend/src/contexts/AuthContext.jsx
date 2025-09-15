@@ -15,7 +15,7 @@ export function AuthProvider({ children }) {
       // Check if user is authenticated by verifying the HTTP-only cookie
       const response = await fetch("http://localhost:4000/api/auth/verify", {
         method: "GET",
-        credentials: "include",
+        credentials: "include", // Include cookies
       });
 
       if (response.ok) {
@@ -37,29 +37,44 @@ export function AuthProvider({ children }) {
   };
 
   const signIn = async (email, password) => {
-    const response = await fetch("http://localhost:4000/api/auth/signIn", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const response = await fetch("http://localhost:4000/api/auth/signIn", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // Include cookies
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok || !data.user) {
-      throw new Error(data.message || "Sign in failed");
+      if (!response.ok || !data.user) {
+        return {
+          success: false,
+          message: data.message || "Sign in failed",
+        };
+      }
+
+      const userData = {
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${data.user.name}`,
+      };
+
+      setUser(userData);
+
+      return {
+        success: true,
+        message: "Sign in successful",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || "Sign in failed",
+      };
     }
-
-    const userData = {
-      id: data.user.id,
-      name: data.user.name,
-      email: data.user.email,
-      avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${data.user.name}`,
-    };
-
-    setUser(userData);
   };
 
   const signUp = async (name, email, password) => {
@@ -68,7 +83,7 @@ export function AuthProvider({ children }) {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
+      credentials: "include", // Include cookies
       body: JSON.stringify({ name, email, password }),
     });
 
