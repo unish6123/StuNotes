@@ -1,6 +1,6 @@
 import express from 'express';
 import  { saveTNotes, getSavedTNotes, getQuiz } from '../controller/transcribeNoteController.js'
-import userAuth from '../middlewear/authMiddlewear.js';
+import userAuth from '../middleware/authMiddlewear.js';
 
 const tNotesRouter = express.Router();
 
