@@ -116,9 +116,6 @@ export default function Navbar() {
             {isAuthenticated ? (
               /* User Profile Dropdown - Desktop */
               <div className="hidden md:flex items-center space-x-3">
-                <span className="text-sm text-muted-foreground">
-                  Welcome, {user?.name}
-                </span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
