@@ -19,7 +19,7 @@ export function AuthProvider({ children }) {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json(); 
         if (data.success && data.user) {
           setUser({
             id: data.user.id,
