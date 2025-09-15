@@ -9,6 +9,7 @@ import Quizzes from "./pages/Quizzes";
 import Footer from "./components/Footer";
 import { ThemeProvider } from "@/components/theme-provider";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { Toaster } from "sonner";
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
           />
         </Routes>
         <Footer></Footer>
+        <Toaster />
       </ThemeProvider>
     </Router>
   );

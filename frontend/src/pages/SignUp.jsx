@@ -114,7 +114,7 @@ export default function SignUp() {
       );
       if (result.success) {
         toast.success("Account created successfully! Welcome to StuNotes.");
-        navigate("/dashboard");
+        navigate("/");
       } else {
         toast.error(result.message || "Sign up failed. Please try again.");
         setErrors({ general: result.message || "Sign up failed" });
