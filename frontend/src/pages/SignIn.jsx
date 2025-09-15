@@ -79,7 +79,7 @@ export default function SignIn() {
       const result = await signIn(formData.email, formData.password);
       if (result.success) {
         toast.success("Welcome back! You've been signed in successfully.");
-        navigate("/dashboard");
+        navigate("/");
       } else {
         toast.error(
           result.message || "Sign in failed. Please check your credentials."
