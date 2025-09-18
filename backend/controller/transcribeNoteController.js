@@ -9,7 +9,9 @@ const saveTNotes = async (req, res) =>{
         if ( !title || !content){
             return res.json({success:false, message: "missing title or content"})
         }
-        const notes = new noteModel({ userId, title, content});
+        const beautifiedNotes =  await generateAIResponse(content, false)
+        console.log("This is coming from saveTNotes controller Ai notes", beautifiedNotes)
+        const notes = new noteModel({ userId, title, content : beautifiedNotes});
         await notes.save();
         res.json({success:true, message:"Transcribe saved successfully."})
     }catch(error){
@@ -46,7 +48,7 @@ const getQuiz  = async(req, res)=>{
         }
         const contents = note.map(n => n.content).join(" ");
 
-        const quiz = await generateAIResponse(contents)
+        const quiz = await generateAIResponse(contents, true)
         return res.json({quiz})
 
 
