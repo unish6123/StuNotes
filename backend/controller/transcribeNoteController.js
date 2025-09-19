@@ -1,5 +1,6 @@
 import noteModel from "../model/notesModel.js";
 import { generateAIResponse } from "../services/gemini.js";
+import quizModel from "../model/quizModel.js";
 
 const saveTNotes = async (req, res) =>{
     try {
@@ -24,9 +25,7 @@ const saveTNotes = async (req, res) =>{
 const getSavedTNotes = async(req,res) =>{
     try{
         const userId = req.user.id
-        const notes = await noteModel.find({
-            userId:userId
-        })
+        const notes = await noteModel.find({ userId}).sort({ createdAt: -1 });
         res.json({notes})
     }catch(err){
         return res.json({success:false, message: err.message})
@@ -59,4 +58,26 @@ const getQuiz  = async(req, res)=>{
     }
 }
 
-export {saveTNotes, getSavedTNotes, getQuiz};
+const saveQuizScore = async(req, res) =>{
+    try{
+        const userId = req.user.id;
+        const {title, score} = req.body;
+        
+        
+
+        if (!title || !score){
+            return res.json({success:false, message: "missing title or score."})
+        }
+        const quiz = new quizModel({userId, title, score})
+        await quiz.save();
+
+        return res.json("Score saved successfully.")
+
+        
+
+    }catch(error){
+        return res.json({success:false, message: error.message})
+    }
+}
+
+export {saveTNotes, getSavedTNotes, getQuiz, saveQuizScore};
