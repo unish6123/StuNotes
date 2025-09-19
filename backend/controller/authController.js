@@ -241,6 +241,44 @@ const getProfile = async (req, res) => {
   }
 };
 
+const resetPassword = async (req, res) => {
+
+  try {
+      const { email, otp, newPassword } = req.body;
+      const user = await userModel.findOne({ email });
+
+      // console.log('The otp that we got from front end is ', otp, "And the resetOtp in database is ", user.resetOtp)
+
+      if (!user || !otp || !newPassword) {
+          return res.json({ success: false, message: "User is not register with this account. " })
+      }
+      if (user.resetOtp === "" || otp !== user.resetOtp) {
+          return res.json({ success: false, message: `invalidOtp from database = ${user.resetOtp} and form frontend ${otp}` })
+      }
+      if (Date.now() > user.resetOtpExpireAt) {
+          return res.json({ success: false, message: "Otp is expired." })
+      }
 
 
-export { signOut, signIn, signUp, sendForgotPasswordOtp, getProfile };
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      user.password = hashedPassword;
+      user.resetOtp = "";
+      user.resetOtpExpireAt = 0;
+      user.save();
+
+      return res.json({ success: true, message: "Password updated successfully." })
+
+
+
+
+  } catch (error) {
+      return res.json({ success: false, message: error.message })
+  }
+}
+
+
+
+
+
+
+export { signOut, signIn, signUp, sendForgotPasswordOtp, getProfile, resetPassword };
