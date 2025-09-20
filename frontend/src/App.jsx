@@ -5,6 +5,7 @@ import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import Transcribe from "./pages/Transcribe";
 import Notes from "./pages/Notes";
+import Enhance from "./pages/Enhance";
 import Quizzes from "./pages/Quizzes";
 import Footer from "./components/Footer";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -34,6 +35,14 @@ function App() {
               <ProtectedRoute>
                 <Notes />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/enhance"
+            element={
+              
+                <Enhance />
+            
             }
           />
           <Route
