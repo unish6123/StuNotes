@@ -5,6 +5,7 @@ const AuthContext = createContext(undefined);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
     checkAuthStatus();
@@ -13,13 +14,13 @@ export function AuthProvider({ children }) {
   const checkAuthStatus = async () => {
     try {
       // Check if user is authenticated by verifying the HTTP-only cookie
-      const response = await fetch("http://localhost:4000/api/auth/verify", {
+      const response = await fetch(`${backendURL}/api/auth/verify`, {
         method: "GET",
         credentials: "include", // Include cookies
       });
 
       if (response.ok) {
-        const data = await response.json(); 
+        const data = await response.json();
         if (data.success && data.user) {
           setUser({
             id: data.user.id,
@@ -38,7 +39,7 @@ export function AuthProvider({ children }) {
 
   const signIn = async (email, password) => {
     try {
-      const response = await fetch("http://localhost:4000/api/auth/signIn", {
+      const response = await fetch(`${backendURL}/api/auth/signIn`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -78,7 +79,7 @@ export function AuthProvider({ children }) {
   };
 
   const signUp = async (name, email, password) => {
-    const response = await fetch("http://localhost:4000/api/auth/signUp", {
+    const response = await fetch(`${backendURL}/api/auth/signUp`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -106,7 +107,7 @@ export function AuthProvider({ children }) {
 
   const signOut = async () => {
     try {
-      await fetch("http://localhost:4000/api/auth/signOut", {
+      await fetch(`${backendURL}/api/auth/signOut`, {
         method: "GET",
         credentials: "include",
       });

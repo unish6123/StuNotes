@@ -9,33 +9,40 @@ import {
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Mic, Square, Play, Pause, Save, Trash2, MicOff } from "lucide-react";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Transcribe() {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [savedTranscripts, setSavedTranscripts] = useState([
-    {
-      id: 1,
-      title: "Physics Lecture - Wave Motion",
-      date: "2024-01-15",
-      duration: "45:30",
-      content: "Today we discussed wave motion and its properties...",
-    },
-    {
-      id: 2,
-      title: "History Class - World War II",
-      date: "2024-01-14",
-      duration: "38:15",
-      content: "The causes and effects of World War II were complex...",
-    },
-  ]);
+  const [title, setTitle] = useState("");
+  const [savedTranscripts, setSavedTranscripts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [quizLoading, setQuizLoading] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(null);
 
   const intervalRef = useRef();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
 
   const {
     transcript,
@@ -45,10 +52,24 @@ export default function Transcribe() {
   } = useSpeechRecognition();
 
   useEffect(() => {
-    if (!browserSupportsSpeechRecognition) {
-      console.warn("Browser doesn't support speech recognition.");
+    if (user) {
+      fetchSavedTranscripts();
     }
-  }, [browserSupportsSpeechRecognition]);
+  }, [user]);
+
+  const fetchSavedTranscripts = async () => {
+    try {
+      const response = await fetch(`${backendURL}/api/transcribe/getNotes`, {
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (data.notes) {
+        setSavedTranscripts(data.notes);
+      }
+    } catch (error) {
+      console.error("Error fetching transcripts:", error);
+    }
+  };
 
   const startRecording = () => {
     setIsRecording(true);
@@ -87,21 +108,137 @@ export default function Transcribe() {
     }
   };
 
-  const saveTranscript = () => {
-    if (transcript.trim()) {
-      const newTranscript = {
-        id: Date.now(),
-        title: `Lecture - ${new Date().toLocaleDateString()}`,
-        date: new Date().toISOString().split("T")[0],
-        duration: `${Math.floor(recordingTime / 60)}:${(recordingTime % 60)
-          .toString()
-          .padStart(2, "0")}`,
-        content: transcript,
-      };
-      setSavedTranscripts((prev) => [newTranscript, ...prev]);
-      resetTranscript();
-      setRecordingTime(0);
+  const saveTranscript = async () => {
+    if (!transcript.trim()) {
+      toast.error("No transcript to save");
+      return;
     }
+
+    if (!title.trim()) {
+      toast.error("Please enter a title for your transcript");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${backendURL}/api/transcribe/saveNotes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          title: title.trim(),
+          content: transcript,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success("Transcript saved successfully!");
+        resetTranscript();
+        setRecordingTime(0);
+        setTitle("");
+        fetchSavedTranscripts();
+      } else {
+        toast.error(data.message || "Failed to save transcript");
+      }
+    } catch (error) {
+      console.error("Error saving transcript:", error);
+      toast.error("Failed to save transcript");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateQuiz = async (title) => {
+    setQuizLoading(title);
+    try {
+      const response = await fetch(`${backendURL}/api/transcribe/getQuiz`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ title }),
+      });
+
+      const data = await response.json();
+
+      if (data.quiz) {
+        toast.success("Quiz generated successfully!");
+        try {
+          const quizData = JSON.parse(data.quiz);
+          const formattedQuiz = {
+            title: `Quiz: ${title}`,
+            questions: quizData.map((q, index) => ({
+              id: index + 1,
+              type: "multiple-choice",
+              question: q.question,
+              options: [q.option1, q.option2, q.option3, q.option4],
+              correct: q.correctOption - 1,
+            })),
+          };
+          // Navigate to quizzes page with the generated quiz data
+          navigate("/quizzes", { state: { generatedQuiz: formattedQuiz } });
+        } catch (parseError) {
+          console.error("Error parsing quiz data:", parseError);
+          toast.error("Failed to parse quiz data");
+        }
+      } else {
+        toast.error(data.message || "Failed to generate quiz");
+      }
+    } catch (error) {
+      console.error("Error generating quiz:", error);
+      toast.error("Failed to generate quiz");
+    } finally {
+      setQuizLoading(null);
+    }
+  };
+
+  const handleDeleteTranscript = async (transcriptId, transcriptTitle) => {
+    setDeleteLoading(transcriptId);
+    try {
+      const response = await fetch(`${backendURL}/api/transcribe/deleteNote`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ noteId: transcriptId }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success(`"${transcriptTitle}" deleted successfully!`);
+        fetchSavedTranscripts();
+      } else {
+        toast.error(data.message || "Failed to delete transcript");
+      }
+    } catch (error) {
+      console.error("Error deleting transcript:", error);
+      toast.error("Failed to delete transcript");
+    } finally {
+      setDeleteLoading(null);
+    }
+  };
+
+  const clearAll = () => {
+    resetTranscript();
+    setRecordingTime(0);
+    setTitle("");
+    // Stop recording if currently recording
+    if (isRecording) {
+      setIsRecording(false);
+      setIsPaused(false);
+      SpeechRecognition.stopListening();
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    }
+    toast.success("Transcript and timer cleared");
   };
 
   const formatTime = (seconds) => {
@@ -237,19 +374,36 @@ export default function Transcribe() {
             </div>
 
             {transcript && (
-              <div className="flex gap-2">
-                <Button onClick={saveTranscript} className="gap-2 text-white">
-                  <Save className="h-4 w-4" />
-                  Save Transcript
-                </Button>
-                <Button
-                  onClick={resetTranscript}
-                  variant="outline"
-                  className="gap-2 bg-transparent"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Clear
-                </Button>
+              <div className="space-y-4">
+                {" "}
+                {/* Changed to space-y-4 for better spacing */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium">Title</label>
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Enter a title for your transcript..."
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={saveTranscript}
+                    className="gap-2 text-white"
+                    disabled={loading} // Added loading state
+                  >
+                    <Save className="h-4 w-4" />
+                    {loading ? "Saving..." : "Save Transcript"}
+                  </Button>
+                  <Button
+                    onClick={clearAll}
+                    variant="outline"
+                    className="gap-2 bg-transparent"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Clear All
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
@@ -264,31 +418,92 @@ export default function Transcribe() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {savedTranscripts.map((transcript) => (
-                <Card key={transcript.id} className="p-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-start">
-                      <h3 className="font-medium">{transcript.title}</h3>
-                      <Badge variant="secondary">{transcript.duration}</Badge>
+              {savedTranscripts.length === 0 ? ( // Added empty state
+                <p className="text-muted-foreground text-center py-8">
+                  No saved transcripts yet. Start recording to create your first
+                  transcript!
+                </p>
+              ) : (
+                savedTranscripts.map((transcript) => (
+                  <Card key={transcript._id} className="p-4">
+                    {" "}
+                    {/* Use _id from MongoDB */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-start">
+                        <h3 className="font-medium">{transcript.title}</h3>
+                        <Badge variant="secondary">
+                          {new Date(transcript.createdAt).toLocaleDateString()}{" "}
+                          {/* Use createdAt from backend */}
+                        </Badge>
+                      </div>
+                      <p className="text-sm line-clamp-3">
+                        {transcript.content}
+                      </p>{" "}
+                      {/* Show more content */}
+                      <div className="flex gap-2 pt-2">
+                        <Button size="sm" variant="outline">
+                          View
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => generateQuiz(transcript.title)}
+                          disabled={quizLoading === transcript.title}
+                        >
+                          {quizLoading === transcript.title
+                            ? "Generating..."
+                            : "Generate Quiz"}
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="hover:bg-destructive hover:text-white bg-transparent"
+                              disabled={deleteLoading === transcript._id}
+                            >
+                              {deleteLoading === transcript._id ? (
+                                "Deleting..."
+                              ) : (
+                                <>
+                                  <Trash2 className="h-3 w-3 mr-1" />
+                                  Delete
+                                </>
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Delete Transcript
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "
+                                {transcript.title}"? This action cannot be
+                                undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() =>
+                                  handleDeleteTranscript(
+                                    transcript._id,
+                                    transcript.title
+                                  )
+                                }
+                                className="bg-destructive text-white hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {transcript.date}
-                    </p>
-                    <p className="text-sm line-clamp-2">{transcript.content}</p>
-                    <div className="flex gap-2 pt-2">
-                      <Button size="sm" variant="outline">
-                        View
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        Edit
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
