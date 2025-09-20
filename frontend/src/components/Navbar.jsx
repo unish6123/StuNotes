@@ -24,6 +24,7 @@ import {
   LogOut,
   Settings,
   User,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -38,6 +39,7 @@ export default function Navbar() {
     { name: "Home", href: "/", icon: GraduationCap },
     { name: "Transcribe", href: "/transcribe", icon: Mic },
     { name: "Notes", href: "/notes", icon: FileText },
+    {name: "Enhance", href: "/enhance", icon: Sparkles},
     { name: "Quizzes", href: "/quizzes", icon: Brain },
   ];
 
