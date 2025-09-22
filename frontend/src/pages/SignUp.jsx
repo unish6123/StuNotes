@@ -38,9 +38,9 @@ export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-  const { signUp } = useAuth();
+  // const { signUp } = useAuth();
   const navigate = useNavigate();
-
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsInitialLoading(false);
@@ -107,21 +107,39 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
-      const result = await signUp(
-        formData.name,
-        formData.email,
-        formData.password
-      );
+      const response = await fetch(`${backendURL}/api/auth/sendSignupOtp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const result = await response.json();
+
       if (result.success) {
-        toast.success("Account created successfully! Welcome to StuNotes.");
-        navigate("/");
+        toast.success("Verification code sent to your email!");
+        // Navigate to verification page with user data
+        navigate("/verify-email", {
+          state: {
+            email: formData.email,
+            name: formData.name,
+            password: formData.password,
+          },
+        });
       } else {
-        toast.error(result.message || "Sign up failed. Please try again.");
-        setErrors({ general: result.message || "Sign up failed" });
+        toast.error(result.message || "Failed to send verification code");
+        setErrors({
+          general: result.message || "Failed to send verification code",
+        });
       }
     } catch (error) {
-      toast.error(error.message || "Sign up failed. Please try again.");
-      setErrors({ general: error.message || "Sign up failed" });
+      toast.error("Network error. Please try again.");
+      setErrors({ general: "Network error. Please try again." });
     } finally {
       setIsLoading(false);
     }
@@ -382,7 +400,7 @@ export default function SignUp() {
                     and{" "}
                     <Link
                       to="/privacy"
-                      className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 underline"
+                      className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium underline"
                     >
                       Privacy Policy
                     </Link>

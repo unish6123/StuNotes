@@ -16,7 +16,7 @@ export function AuthProvider({ children }) {
       // Check if user is authenticated by verifying the HTTP-only cookie
       const response = await fetch(`${backendURL}/api/auth/verify`, {
         method: "GET",
-        credentials: "include", // Include cookies
+        credentials: "include",
       });
 
       if (response.ok) {
@@ -107,14 +107,23 @@ export function AuthProvider({ children }) {
 
   const signOut = async () => {
     try {
+      console.log("Attempting to sign out...");
+
       await fetch(`${backendURL}/api/auth/signOut`, {
         method: "GET",
         credentials: "include",
       });
+
+      console.log("Backend signOut called successfully");
     } catch (error) {
       console.error("Sign out error:", error);
     } finally {
       setUser(null);
+
+      localStorage.clear();
+      sessionStorage.clear();
+
+      console.log("User state and storage cleared completely");
     }
   };
 
