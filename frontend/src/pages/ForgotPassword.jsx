@@ -22,7 +22,7 @@ export default function ForgotPassword() {
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
-
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsInitialLoading(false);
@@ -56,17 +56,14 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/auth/forgotPassword`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({ email }),
-        }
-      );
+      const response = await fetch(`${backendURL}/api/auth/forgotPassword`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ email }),
+      });
 
       const data = await response.json();
 

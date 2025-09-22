@@ -30,6 +30,7 @@ export default function ResetPassword() {
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email;
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
     // Redirect if no email provided
@@ -95,21 +96,18 @@ export default function ResetPassword() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/auth/resetPassword`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            email,
-            otp: formData.otp,
-            newPassword: formData.newPassword,
-          }),
-        }
-      );
+      const response = await fetch(`${backendURL}/api/auth/resetPassword`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          email,
+          otp: formData.otp,
+          newPassword: formData.newPassword,
+        }),
+      });
 
       const data = await response.json();
 
