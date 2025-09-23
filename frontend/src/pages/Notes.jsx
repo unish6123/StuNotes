@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,15 +12,28 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, FileText, Calendar } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Plus, Search, FileText, Calendar, Trash2 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 export default function Notes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(null);
 
   const [newNote, setNewNote] = useState({
     title: "",
@@ -28,6 +41,7 @@ export default function Notes() {
   });
 
   const { user } = useAuth();
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
     if (user) {
@@ -37,7 +51,7 @@ export default function Notes() {
 
   const fetchNotes = async () => {
     try {
-      const response = await fetch("/getNotes", {
+      const response = await fetch(`${backendURL}/api/transcribe/getNotes`, {
         method: "GET",
         credentials: "include",
       });
@@ -48,6 +62,7 @@ export default function Notes() {
           title: note.title,
           content: note.content,
           date: new Date(note.createdAt).toISOString().split("T")[0],
+          type: note.type || "manual",
         }));
         setNotes(transformedNotes);
       }
@@ -72,7 +87,7 @@ export default function Notes() {
 
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:4000/api//saveNotes", {
+      const response = await fetch(`${backendURL}/api/transcribe/saveNotes`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -99,6 +114,36 @@ export default function Notes() {
       toast.error("Failed to create note");
     } finally {
       setLoading(false);
+    }
+  };
+  const handleDeleteNote = async (noteId, noteTitle) => {
+    setDeleteLoading(noteId);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/transcribe/deleteNote`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({ noteId }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success(`"${noteTitle}" deleted successfully!`);
+        fetchNotes();
+      } else {
+        toast.error(data.message || "Failed to delete note");
+      }
+    } catch (error) {
+      console.error("Error deleting note:", error);
+      toast.error("Failed to delete note");
+    } finally {
+      setDeleteLoading(null);
     }
   };
 
@@ -189,7 +234,17 @@ export default function Notes() {
           <Card key={note.id} className="h-fit">
             <CardHeader>
               <div className="flex items-start justify-between">
-                <FileText className="h-5 w-5 text-muted-foreground" />
+                <div className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <Badge
+                    variant={
+                      note.type === "transcribed" ? "default" : "secondary"
+                    }
+                    className="text-xs"
+                  >
+                    {note.type === "transcribed" ? "Transcribed" : "Manual"}
+                  </Badge>
+                </div>
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                   <Calendar className="h-3 w-3" />
                   {note.date}
@@ -216,6 +271,43 @@ export default function Notes() {
                 >
                   View
                 </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 bg-transparent hover:bg-destructive hover:text-white"
+                      disabled={deleteLoading === note.id}
+                    >
+                      {deleteLoading === note.id ? (
+                        "Deleting..."
+                      ) : (
+                        <>
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Delete
+                        </>
+                      )}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Note</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete "{note.title}"? This
+                        action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleDeleteNote(note.id, note.title)}
+                        className="bg-destructive text-white hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardContent>
           </Card>

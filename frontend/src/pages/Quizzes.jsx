@@ -41,6 +41,7 @@ export default function Quizzes() {
   const [generatedQuiz, setGeneratedQuiz] = useState(null);
 
   const { user } = useAuth();
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
     if (user) {
@@ -50,7 +51,7 @@ export default function Quizzes() {
 
   const fetchNotes = async () => {
     try {
-      const response = await fetch("/getNotes", {
+      const response = await fetch(`${backendURL}/api/transcribe/getNotes`, {
         method: "GET",
         credentials: "include",
       });
@@ -72,7 +73,7 @@ export default function Quizzes() {
 
     setLoading(true);
     try {
-      const response = await fetch("/getQuiz", {
+      const response = await fetch(`${backendURL}/api/transcribe/getQuiz`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -143,6 +144,40 @@ export default function Quizzes() {
     });
     return Math.round((correct / activeQuiz.questions.length) * 100);
   };
+
+  const saveQuizScore = async (score) => {
+    try {
+      const response = await fetch(`${port}/api/transcribe/score`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          quizTitle: activeQuiz.title,
+          score: score,
+          totalQuestions: activeQuiz.questions.length,
+          correctAnswers: Math.round(
+            (score / 100) * activeQuiz.questions.length
+          ),
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        console.log("Quiz score saved successfully");
+      }
+    } catch (error) {
+      console.error("Error saving quiz score:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (showResults && activeQuiz) {
+      const score = calculateScore();
+      saveQuizScore(score);
+    }
+  }, [showResults, activeQuiz]);
 
   if (activeQuiz && !showResults) {
     const question = activeQuiz.questions[currentQuestion];
