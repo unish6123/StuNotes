@@ -2,14 +2,16 @@ import userModel from "../model/userModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import transporter from "../config/nodeMailer.js";
+import tempModel from "../model/tempModel.js";
+import crypto from "crypto";
 
-const signUp = async (req, res) => {
+
+const getOtp = async(req, res)=>{
   try {
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
       return res.json({ success: false, message: "Missing Credentials" });
     }
-
     const userEmail = await userModel.findOne({ email });
     if (userEmail) {
       return res.json({
@@ -17,58 +19,97 @@ const signUp = async (req, res) => {
         message: "Your account already exists or this email arealy exists.",
       });
     }
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const otpExpireAt = Date.now() + 10 * 60 * 1000;
 
-    try {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const user = new userModel({ name, email, password: hashedPassword });
-      await user.save();
+    const tempUser = await tempModel({name, email, password : hashedPassword, otp, otpExpireAt})
 
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-        expiresIn: "7d",
-      });
-
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV !== "development",
-        sameSite: "none",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
-
-      await transporter.sendMail({
-        from: process.env.SENDER_EMAIL,
-        to: email,
-        subject: "Welcome to StuNotes 🎉",
-        html: `
-                  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; background: #f9f9f9; padding: 20px; border-radius: 10px;">
-                    <div style="text-align: center; padding: 10px 0;">
-                      <h1 style="color: #4CAF50;">Welcome to <span style="color: #2c3e50;">StuNotes</span> 🎓</h1>
-                    </div>
-                    <div style="background: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                      <p style="font-size: 16px; color: #333;">Hello <b>${name}</b>,</p>
-                      <p style="font-size: 15px; color: #555;">
-                        Thank you for signing up with <b>${email}</b>. 
-                        We’re excited to have you on board and we’re confident StuNotes will make your study easier and more effective. 🚀
-                      </p>
-                      <p style="font-size: 15px; color: #555;">
-                        Explore our resources, take notes, and organize your study better.
-                      </p>
-                      <div style="text-align: center; margin-top: 20px;">
-                        <a href="https://stunotes.com" 
-                           style="background: #4CAF50; color: white; text-decoration: none; padding: 12px 20px; border-radius: 6px; display: inline-block; font-weight: bold;">
-                          Get Started
-                        </a>
-                      </div>
-                    </div>
-                    <p style="text-align: center; font-size: 12px; color: #888; margin-top: 20px;">
-                      © ${new Date().getFullYear()} StuNotes. All rights reserved.
-                    </p>
+    tempUser.save()
+    await transporter.sendMail({
+      from: process.env.SENDER_EMAIL,
+      to: email,
+      subject: "Welcome to StuNotes 🎉",
+      html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; background: #f9f9f9; padding: 20px; border-radius: 10px;">
+                  <div style="text-align: center; padding: 10px 0;">
+                    <h1 style="color: #4CAF50;">Welcome to <span style="color: #2c3e50;">StuNotes</span> 🎓</h1>
                   </div>
-                `,
-      });
+                  <div style="background: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                    <p style="font-size: 16px; color: #333;">Hello <b>${name}</b>,</p>
+                    <p style="font-size: 15px; color: #555;">
+                      Thank you for signing up with <b>${email} and your verification code is : <h2>${otp}</h2> </b>. 
+                      We’re excited to have you on board and we’re confident StuNotes will make your study easier and more effective. 🚀
+                    </p>
+                    <p style="font-size: 15px; color: #555;">
+                      Explore our resources, take notes, and organize your study better.
+                    </p>
+                    <div style="text-align: center; margin-top: 20px;">
+                      <a href="https://stunotes.com" 
+                         style="background: #4CAF50; color: white; text-decoration: none; padding: 12px 20px; border-radius: 6px; display: inline-block; font-weight: bold;">
+                        Get Started
+                      </a>
+                    </div>
+                  </div>
+                  <p style="text-align: center; font-size: 12px; color: #888; margin-top: 20px;">
+                    © ${new Date().getFullYear()} StuNotes. All rights reserved.
+                  </p>
+                </div>
+              `,
+    });
+
+    res.json({ success: true, message: "OTP sent to email" })
+
+     
+
+  }catch(error){
+    return res.json({ success:false, message:error.message})
+  }
+}
+
+const verifySignUp = async (req, res) => {
+  try {
+    const {email, otp} = req.body;
+    if (!email || ! otp) {
+      return res.json({ success: false, message: "Missing email or otp from frontend" });
+    }
+
+    const record = await tempModel.findOne({ email });
+    if (!record) {
+      return res.json({ success: false, message: "No OTP request found" });
+    }
+
+    if (record.expiresAt < Date.now()) {
+      return res.json({ success: false, message: "OTP expired" });
+    }
+
+    if (record.otp !== otp) {
+      return res.json({ success: false, message: "Invalid OTP" });
+    }
+
+   const user = userModel({
+      name: record.name,
+      email: record.email,
+      password: record.password,
+   })
+  
+   await tempModel.deleteOne({ email });
+   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    expiresIn: "7d",});
+
+   res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV !== "development",
+    sameSite: "none",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    try {
+      
+
 
       return res.json({
         success: true,
-        message: "User signed up successfully.",
+        message: "User verified successfullly."
       });
     } catch (error) {
       res.json({ success: false, message: error.message });
@@ -281,4 +322,4 @@ const resetPassword = async (req, res) => {
 
 
 
-export { signOut, signIn, signUp, sendForgotPasswordOtp, getProfile, resetPassword };
+export { signOut, signIn, sendForgotPasswordOtp, getProfile, resetPassword, getOtp, verifySignUp};
