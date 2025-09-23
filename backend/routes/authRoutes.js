@@ -11,7 +11,7 @@ authRouter.get('/signOut', signOut);
 authRouter.post('/resetPassword', resetPassword);
 authRouter.post('/signUp', getOtp)
 
-// Naryan thing
+
 authRouter.get("/verify", userAuth, getProfile);
 
 export default authRouter;

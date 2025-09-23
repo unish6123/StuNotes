@@ -72,7 +72,7 @@ export default function Notes() {
 
     setLoading(true);
     try {
-      const response = await fetch("/saveTranscribe", {
+      const response = await fetch("http://localhost:4000/api//saveNotes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
