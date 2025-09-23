@@ -25,6 +25,7 @@ export default function VerifyEmail() {
   const navigate = useNavigate();
   const location = useLocation();
   const { signUp } = useAuth();
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
 
   const { email, name, password } = location.state || {};
 
@@ -80,21 +81,18 @@ export default function VerifyEmail() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/auth/verifySignupOtp`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            name,
-            password,
-            otp: otpString,
-          }),
-        }
-      );
+      const response = await fetch(`${backendURL}/api/auth/verifySignup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          name,
+          password,
+          otp: otpString,
+        }),
+      });
 
       const result = await response.json();
 
@@ -120,16 +118,13 @@ export default function VerifyEmail() {
     setIsResending(true);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/auth/sendSignupOtp`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ name, email, password }),
-        }
-      );
+      const response = await fetch(`${backendURL}/api/auth/signUp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, password }),
+      });
 
       const result = await response.json();
 
