@@ -5,12 +5,11 @@ import { Plus, Search, FileText } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import ViewDialog from "../components/ViewDialog";
 import EditDialog from "../components/EditDialog";
 import CreateNoteDialog from "../components/CreateNoteDialog";
 import Pagination from "../components/Pagination";
 import NoteCard from "../components/NoteCard";
-import QuickQuizModal from "../components/QuickQuizModal";
+import ViewDialog from "../components/ViewDialog";
 
 export default function Notes() {
   const { user } = useAuth();
@@ -24,8 +23,6 @@ export default function Notes() {
   const [selectedNote, setSelectedNote] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState({ title: "", content: "" });
-  const [quickQuizOpen, setQuickQuizOpen] = useState(false);
-  const [quizContent, setQuizContent] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
@@ -145,11 +142,15 @@ export default function Notes() {
   };
 
   const handleTakeQuiz = (note) => {
-    setQuizContent({
-      title: note.title,
-      content: note.content,
+    navigate("/quizzes", {
+      state: {
+        quizContent: {
+          title: note.title,
+          content: note.content,
+          type: "note",
+        },
+      },
     });
-    setQuickQuizOpen(true);
   };
 
   const handleViewNote = (note) => {
@@ -223,7 +224,7 @@ export default function Notes() {
           </div>
 
           <Button
-            className="gap-2 text-white my-2 sm:my-0 "
+            className="gap-2 text-white my-2 sm:my-0"
             onClick={() => setCreateDialogOpen(true)}
           >
             <Plus className="h-4 w-4" />
@@ -300,13 +301,6 @@ export default function Notes() {
         titleProperty="title"
         contentProperty="content"
         idProperty="id"
-      />
-
-      <QuickQuizModal
-        isOpen={quickQuizOpen}
-        onClose={() => setQuickQuizOpen(false)}
-        content={quizContent?.content}
-        title={quizContent?.title}
       />
 
       {filteredNotes.length === 0 && (

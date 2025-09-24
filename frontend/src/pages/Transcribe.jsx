@@ -18,10 +18,9 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import TranscriptCard from "../components/TranscriptCard";
-import ViewDialog from "../components/ViewDialog";
 import EditDialog from "../components/EditDialog";
 import Pagination from "../components/Pagination";
-import QuickQuizModal from "../components/QuickQuizModal";
+import ViewDialog from "../components/ViewDialog";
 
 export default function Transcribe() {
   const [isRecording, setIsRecording] = useState(false);
@@ -32,8 +31,6 @@ export default function Transcribe() {
   const [loading, setLoading] = useState(false);
   const [quizLoading, setQuizLoading] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(null);
-  const [quickQuizOpen, setQuickQuizOpen] = useState(false);
-  const [quizContent, setQuizContent] = useState(null);
 
   const [viewerOpen, setViewerOpen] = useState(false);
   const [selectedTranscript, setSelectedTranscript] = useState(null);
@@ -294,12 +291,20 @@ export default function Transcribe() {
   };
 
   const handleTakeQuiz = (transcript) => {
-    setQuizContent({
-      title: transcript.title,
-      content: transcript.content,
+    navigate("/quizzes", {
+      state: {
+        quizContent: {
+          title: transcript.title,
+          content: transcript.content,
+          type: "transcript",
+        },
+      },
     });
-    setQuickQuizOpen(true);
   };
+
+  // const handlePlayTranscript = (transcript) => {
+  //   toast.info(`Playing transcript: ${transcript.title}`);
+  // };
 
   const totalPages = Math.ceil(savedTranscripts.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -552,13 +557,6 @@ export default function Transcribe() {
         titleProperty="title"
         contentProperty="content"
         idProperty="id"
-      />
-
-      <QuickQuizModal
-        isOpen={quickQuizOpen}
-        onClose={() => setQuickQuizOpen(false)}
-        content={quizContent?.content}
-        title={quizContent?.title}
       />
     </div>
   );
