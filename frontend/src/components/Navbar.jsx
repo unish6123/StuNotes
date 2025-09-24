@@ -143,7 +143,7 @@ export default function Navbar() {
                       </div>
                     </div>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>
+                    {/* <DropdownMenuItem>
                       <User className="mr-2 h-4 w-4" />
                       <span>Profile</span>
                     </DropdownMenuItem>
@@ -151,7 +151,7 @@ export default function Navbar() {
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Settings</span>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator /> */}
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Sign out</span>
@@ -234,7 +234,7 @@ export default function Navbar() {
                         </span>
                       </div>
                     </div>
-                    <Button
+                    {/* <Button
                       variant="ghost"
                       className="w-full justify-start"
                       onClick={() => {
@@ -253,7 +253,7 @@ export default function Navbar() {
                     >
                       <Settings className="mr-2 h-4 w-4" />
                       Settings
-                    </Button>
+                    </Button> */}
                     <Button
                       variant="ghost"
                       className="w-full justify-start"
