@@ -10,17 +10,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Mic, Square, Play, Pause, Save, Trash2, MicOff } from "lucide-react";
 import SpeechRecognition, {
   useSpeechRecognition,
@@ -28,6 +17,11 @@ import SpeechRecognition, {
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import TranscriptCard from "../components/TranscriptCard";
+import ViewDialog from "../components/ViewDialog";
+import EditDialog from "../components/EditDialog";
+import Pagination from "../components/Pagination";
+import QuickQuizModal from "../components/QuickQuizModal";
 
 export default function Transcribe() {
   const [isRecording, setIsRecording] = useState(false);
@@ -38,6 +32,19 @@ export default function Transcribe() {
   const [loading, setLoading] = useState(false);
   const [quizLoading, setQuizLoading] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [quickQuizOpen, setQuickQuizOpen] = useState(false);
+  const [quizContent, setQuizContent] = useState(null);
+
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedTranscript, setSelectedTranscript] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingTranscript, setEditingTranscript] = useState({
+    title: "",
+    content: "",
+  });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 3;
 
   const intervalRef = useRef();
   const { user } = useAuth();
@@ -64,7 +71,10 @@ export default function Transcribe() {
       });
       const data = await response.json();
       if (data.notes) {
-        setSavedTranscripts(data.notes);
+        const sortedTranscripts = data.notes.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        setSavedTranscripts(sortedTranscripts);
       }
     } catch (error) {
       console.error("Error fetching transcripts:", error);
@@ -140,7 +150,7 @@ export default function Transcribe() {
         resetTranscript();
         setRecordingTime(0);
         setTitle("");
-        fetchSavedTranscripts();
+        fetchSavedTranscripts(); // Refresh the list
       } else {
         toast.error(data.message || "Failed to save transcript");
       }
@@ -152,8 +162,8 @@ export default function Transcribe() {
     }
   };
 
-  const generateQuiz = async (title) => {
-    setQuizLoading(title);
+  const generateQuiz = async (transcriptTitle) => {
+    setQuizLoading(transcriptTitle);
     try {
       const response = await fetch(`${backendURL}/api/transcribe/getQuiz`, {
         method: "POST",
@@ -161,7 +171,7 @@ export default function Transcribe() {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({ title }),
+        body: JSON.stringify({ title: transcriptTitle }),
       });
 
       const data = await response.json();
@@ -171,7 +181,7 @@ export default function Transcribe() {
         try {
           const quizData = JSON.parse(data.quiz);
           const formattedQuiz = {
-            title: `Quiz: ${title}`,
+            title: `Quiz: ${transcriptTitle}`,
             questions: quizData.map((q, index) => ({
               id: index + 1,
               type: "multiple-choice",
@@ -180,7 +190,6 @@ export default function Transcribe() {
               correct: q.correctOption - 1,
             })),
           };
-          // Navigate to quizzes page with the generated quiz data
           navigate("/quizzes", { state: { generatedQuiz: formattedQuiz } });
         } catch (parseError) {
           console.error("Error parsing quiz data:", parseError);
@@ -213,7 +222,7 @@ export default function Transcribe() {
 
       if (data.success) {
         toast.success(`"${transcriptTitle}" deleted successfully!`);
-        fetchSavedTranscripts();
+        fetchSavedTranscripts(); // Refresh the transcripts list
       } else {
         toast.error(data.message || "Failed to delete transcript");
       }
@@ -225,28 +234,84 @@ export default function Transcribe() {
     }
   };
 
+  const handleViewTranscript = (transcript) => {
+    setSelectedTranscript(transcript);
+    setViewerOpen(true);
+  };
+
+  const handleEditTranscript = (transcript) => {
+    setEditingTranscript({
+      title: transcript.title,
+      content: transcript.content,
+      id: transcript._id,
+    });
+    setEditDialogOpen(true);
+    setViewerOpen(false);
+  };
+
+  const handleSaveEdit = async (updatedTranscript, shouldSave = false) => {
+    if (!shouldSave) {
+      setEditingTranscript(updatedTranscript);
+      return;
+    }
+
+    if (!updatedTranscript.title || !updatedTranscript.content) {
+      toast.error("Please provide both title and content");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${backendURL}/api/transcribe/updateNote`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          noteId: updatedTranscript.id,
+          title: updatedTranscript.title,
+          content: updatedTranscript.content,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success("Transcript updated successfully!");
+        setEditingTranscript({ title: "", content: "" });
+        setEditDialogOpen(false);
+        fetchSavedTranscripts();
+      } else {
+        toast.error(data.message || "Failed to update transcript");
+      }
+    } catch (error) {
+      console.error("Error updating transcript:", error);
+      toast.error("Failed to update transcript");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTakeQuiz = (transcript) => {
+    setQuizContent({
+      title: transcript.title,
+      content: transcript.content,
+    });
+    setQuickQuizOpen(true);
+  };
+
+  const totalPages = Math.ceil(savedTranscripts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedTranscripts = savedTranscripts.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
+
   const clearAll = () => {
     resetTranscript();
     setRecordingTime(0);
     setTitle("");
-    // Stop recording if currently recording
-    if (isRecording) {
-      setIsRecording(false);
-      setIsPaused(false);
-      SpeechRecognition.stopListening();
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    }
-    toast.success("Transcript and timer cleared");
-  };
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs
-      .toString()
-      .padStart(2, "0")}`;
   };
 
   if (!browserSupportsSpeechRecognition) {
@@ -369,43 +434,51 @@ export default function Transcribe() {
                 value={transcript}
                 readOnly
                 placeholder="Transcription will appear here as you speak..."
-                className="h-[200px] resize-none overflow-y-auto"
+                className="h-[200px] resize-none overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
               />
             </div>
 
-            {transcript && (
-              <div className="space-y-4">
-                {" "}
-                {/* Changed to space-y-4 for better spacing */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium">Title</label>
-                  <Input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Enter a title for your transcript..."
-                    className="w-full"
-                  />
-                </div>
-                <div className="flex gap-2">
+            <div className="space-y-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium">Title</label>
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter a title for your transcript..."
+                  className="w-full"
+                />
+              </div>
+
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  onClick={saveTranscript}
+                  className="gap-2 text-white"
+                  disabled={loading || !transcript.trim()}
+                >
+                  <Save className="h-4 w-4" />
+                  {loading ? "Saving..." : "Save Transcript"}
+                </Button>
+                <Button
+                  onClick={clearAll}
+                  variant="outline"
+                  className="gap-2 bg-transparent"
+                  disabled={!transcript && !title && recordingTime === 0}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Clear All
+                </Button>
+                {recordingTime > 0 && (
                   <Button
-                    onClick={saveTranscript}
-                    className="gap-2 text-white"
-                    disabled={loading} // Added loading state
-                  >
-                    <Save className="h-4 w-4" />
-                    {loading ? "Saving..." : "Save Transcript"}
-                  </Button>
-                  <Button
-                    onClick={clearAll}
+                    onClick={() => setRecordingTime(0)}
                     variant="outline"
                     className="gap-2 bg-transparent"
                   >
                     <Trash2 className="h-4 w-4" />
-                    Clear All
+                    Clear Timer
                   </Button>
-                </div>
+                )}
               </div>
-            )}
+            </div>
           </CardContent>
         </Card>
 
@@ -417,97 +490,85 @@ export default function Transcribe() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {savedTranscripts.length === 0 ? ( // Added empty state
-                <p className="text-muted-foreground text-center py-8">
-                  No saved transcripts yet. Start recording to create your first
-                  transcript!
-                </p>
-              ) : (
-                savedTranscripts.map((transcript) => (
-                  <Card key={transcript._id} className="p-4">
-                    {" "}
-                    {/* Use _id from MongoDB */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-start">
-                        <h3 className="font-medium">{transcript.title}</h3>
-                        <Badge variant="secondary">
-                          {new Date(transcript.createdAt).toLocaleDateString()}{" "}
-                          {/* Use createdAt from backend */}
-                        </Badge>
-                      </div>
-                      <p className="text-sm line-clamp-3">
-                        {transcript.content}
-                      </p>{" "}
-                      {/* Show more content */}
-                      <div className="flex gap-2 pt-2">
-                        <Button size="sm" variant="outline">
-                          View
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => generateQuiz(transcript.title)}
-                          disabled={quizLoading === transcript.title}
-                        >
-                          {quizLoading === transcript.title
-                            ? "Generating..."
-                            : "Generate Quiz"}
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="hover:bg-destructive hover:text-white bg-transparent"
-                              disabled={deleteLoading === transcript._id}
-                            >
-                              {deleteLoading === transcript._id ? (
-                                "Deleting..."
-                              ) : (
-                                <>
-                                  <Trash2 className="h-3 w-3 mr-1" />
-                                  Delete
-                                </>
-                              )}
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Delete Transcript
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete "
-                                {transcript.title}"? This action cannot be
-                                undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() =>
-                                  handleDeleteTranscript(
-                                    transcript._id,
-                                    transcript.title
-                                  )
-                                }
-                                className="bg-destructive text-white hover:bg-destructive/90"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                  </Card>
-                ))
-              )}
-            </div>
+            {savedTranscripts.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">
+                No saved transcripts yet. Start recording to create your first
+                transcript!
+              </p>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 auto-rows-max">
+                  {paginatedTranscripts.map((transcript) => (
+                    <TranscriptCard
+                      key={transcript._id}
+                      transcript={transcript}
+                      onView={handleViewTranscript}
+                      onEdit={handleEditTranscript}
+                      onTakeQuiz={handleTakeQuiz}
+                      onDelete={handleDeleteTranscript}
+                      deleteLoading={deleteLoading}
+                      quizLoading={quizLoading}
+                      onGenerateQuiz={generateQuiz}
+                    />
+                  ))}
+                </div>
+
+                {savedTranscripts.length > itemsPerPage && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    itemsPerPage={itemsPerPage}
+                    totalItems={savedTranscripts.length}
+                    itemName="transcripts"
+                  />
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
+
+      <ViewDialog
+        isOpen={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+        item={selectedTranscript}
+        onEdit={handleEditTranscript}
+        onTakeQuiz={handleTakeQuiz}
+        itemType="transcript"
+        titleProperty="title"
+        contentProperty="content"
+        dateProperty="createdAt"
+        typeProperty="type"
+      />
+
+      <EditDialog
+        isOpen={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        item={editingTranscript}
+        onSave={handleSaveEdit}
+        loading={loading}
+        itemType="transcript"
+        titleProperty="title"
+        contentProperty="content"
+        idProperty="id"
+      />
+
+      <QuickQuizModal
+        isOpen={quickQuizOpen}
+        onClose={() => setQuickQuizOpen(false)}
+        content={quizContent?.content}
+        title={quizContent?.title}
+      />
     </div>
   );
+}
+
+// Helper functions
+function formatTime(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins.toString().padStart(2, "0")}:${secs
+    .toString()
+    .padStart(2, "0")}`;
 }

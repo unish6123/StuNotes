@@ -1,46 +1,35 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Plus, Search, FileText, Calendar, Trash2 } from "lucide-react";
+import { Plus, Search, FileText } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
+import ViewDialog from "../components/ViewDialog";
+import EditDialog from "../components/EditDialog";
+import CreateNoteDialog from "../components/CreateNoteDialog";
+import Pagination from "../components/Pagination";
+import NoteCard from "../components/NoteCard";
+import QuickQuizModal from "../components/QuickQuizModal";
 
 export default function Notes() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedNote, setSelectedNote] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState({ title: "", content: "" });
+  const [quickQuizOpen, setQuickQuizOpen] = useState(false);
+  const [quizContent, setQuizContent] = useState(null);
 
-  const [newNote, setNewNote] = useState({
-    title: "",
-    content: "",
-  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
-  const { user } = useAuth();
   const backendURL = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
@@ -63,7 +52,11 @@ export default function Notes() {
           content: note.content,
           date: new Date(note.createdAt).toISOString().split("T")[0],
           type: note.type || "manual",
+          createdAt: note.createdAt,
         }));
+        transformedNotes.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
         setNotes(transformedNotes);
       }
     } catch (error) {
@@ -79,7 +72,14 @@ export default function Notes() {
     return matchesSearch;
   });
 
-  const handleCreateNote = async () => {
+  const totalPages = Math.ceil(filteredNotes.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedNotes = filteredNotes.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
+
+  const handleCreateNote = async (newNote) => {
     if (!newNote.title || !newNote.content) {
       toast.error("Please provide both title and content");
       return;
@@ -103,8 +103,7 @@ export default function Notes() {
 
       if (data.success) {
         toast.success("Note created successfully!");
-        setNewNote({ title: "", content: "" });
-        setDialogOpen(false);
+        setCreateDialogOpen(false);
         fetchNotes();
       } else {
         toast.error(data.message || "Failed to create note");
@@ -116,20 +115,18 @@ export default function Notes() {
       setLoading(false);
     }
   };
+
   const handleDeleteNote = async (noteId, noteTitle) => {
     setDeleteLoading(noteId);
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/transcribe/deleteNote`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({ noteId }),
-        }
-      );
+      const response = await fetch(`${backendURL}/api/transcribe/deleteNote`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ noteId }),
+      });
 
       const data = await response.json();
 
@@ -147,10 +144,77 @@ export default function Notes() {
     }
   };
 
+  const handleTakeQuiz = (note) => {
+    setQuizContent({
+      title: note.title,
+      content: note.content,
+    });
+    setQuickQuizOpen(true);
+  };
+
+  const handleViewNote = (note) => {
+    setSelectedNote(note);
+    setViewerOpen(true);
+  };
+
+  const handleEditNote = (note) => {
+    setEditingNote({ title: note.title, content: note.content, id: note.id });
+    setEditDialogOpen(true);
+    setViewerOpen(false);
+  };
+
+  const handleSaveEdit = async (updatedNote, shouldSave = false) => {
+    if (!shouldSave) {
+      setEditingNote(updatedNote);
+      return;
+    }
+
+    if (!updatedNote.title || !updatedNote.content) {
+      toast.error("Please provide both title and content");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${backendURL}/api/transcribe/updateNote`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          noteId: updatedNote.id,
+          title: updatedNote.title,
+          content: updatedNote.content,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success("Note updated successfully!");
+        setEditingNote({ title: "", content: "" });
+        setEditDialogOpen(false);
+        fetchNotes();
+      } else {
+        toast.error(data.message || "Failed to update note");
+      }
+    } catch (error) {
+      console.error("Error updating note:", error);
+      toast.error("Failed to update note");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl min-h-[80vh]">
       <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex-col sm:flex sm:flex-row justify-between items-center mb-4">
           <div>
             <h1 className="text-3xl font-bold mb-2">My Notes</h1>
             <p className="text-muted-foreground">
@@ -158,61 +222,13 @@ export default function Notes() {
             </p>
           </div>
 
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2 text-white">
-                <Plus className="h-4 w-4" />
-                New Note
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Create New Note</DialogTitle>
-                <DialogDescription>
-                  Add a new note to your collection
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="title" className="mb-2">
-                    Title
-                  </Label>
-                  <Input
-                    id="title"
-                    value={newNote.title}
-                    onChange={(e) =>
-                      setNewNote((prev) => ({ ...prev, title: e.target.value }))
-                    }
-                    placeholder="Enter note title..."
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="content" className="mb-2">
-                    Content
-                  </Label>
-                  <Textarea
-                    id="content"
-                    value={newNote.content}
-                    onChange={(e) =>
-                      setNewNote((prev) => ({
-                        ...prev,
-                        content: e.target.value,
-                      }))
-                    }
-                    placeholder="Write your note content..."
-                    className="h-[200px] resize-none overflow-y-auto"
-                  />
-                </div>
-                <Button
-                  onClick={handleCreateNote}
-                  disabled={loading}
-                  className="w-full text-white"
-                >
-                  {loading ? "Creating..." : "Create Note"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button
+            className="gap-2 text-white my-2 sm:my-0 "
+            onClick={() => setCreateDialogOpen(true)}
+          >
+            <Plus className="h-4 w-4" />
+            New Note
+          </Button>
         </div>
 
         <div className="flex gap-4 mb-6">
@@ -229,90 +245,69 @@ export default function Notes() {
       </div>
 
       {/* Notes Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredNotes.map((note) => (
-          <Card key={note.id} className="h-fit">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-muted-foreground" />
-                  <Badge
-                    variant={
-                      note.type === "transcribed" ? "default" : "secondary"
-                    }
-                    className="text-xs"
-                  >
-                    {note.type === "transcribed" ? "Transcribed" : "Manual"}
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <Calendar className="h-3 w-3" />
-                  {note.date}
-                </div>
-              </div>
-              <CardTitle className="text-lg">{note.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                {note.content}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1 bg-transparent"
-                >
-                  Edit
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1 bg-transparent"
-                >
-                  View
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1 bg-transparent hover:bg-destructive hover:text-white"
-                      disabled={deleteLoading === note.id}
-                    >
-                      {deleteLoading === note.id ? (
-                        "Deleting..."
-                      ) : (
-                        <>
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Delete
-                        </>
-                      )}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Note</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete "{note.title}"? This
-                        action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => handleDeleteNote(note.id, note.title)}
-                        className="bg-destructive text-white hover:bg-destructive/90"
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-max">
+        {paginatedNotes.map((note) => (
+          <NoteCard
+            key={note.id}
+            note={note}
+            onView={handleViewNote}
+            onEdit={handleEditNote}
+            onTakeQuiz={handleTakeQuiz}
+            onDelete={handleDeleteNote}
+            deleteLoading={deleteLoading}
+          />
         ))}
       </div>
+
+      {filteredNotes.length > itemsPerPage && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={filteredNotes.length}
+          itemName="notes"
+        />
+      )}
+
+      <CreateNoteDialog
+        isOpen={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onSave={handleCreateNote}
+        loading={loading}
+      />
+
+      <ViewDialog
+        isOpen={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+        item={selectedNote}
+        onEdit={handleEditNote}
+        onTakeQuiz={handleTakeQuiz}
+        itemType="note"
+        titleProperty="title"
+        contentProperty="content"
+        dateProperty="date"
+        typeProperty="type"
+      />
+
+      <EditDialog
+        isOpen={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        item={editingNote}
+        onSave={handleSaveEdit}
+        loading={loading}
+        itemType="note"
+        titleProperty="title"
+        contentProperty="content"
+        idProperty="id"
+      />
+
+      <QuickQuizModal
+        isOpen={quickQuizOpen}
+        onClose={() => setQuickQuizOpen(false)}
+        content={quizContent?.content}
+        title={quizContent?.title}
+      />
 
       {filteredNotes.length === 0 && (
         <div className="text-center py-12">
