@@ -29,20 +29,15 @@ export default function Home() {
       description:
         "Record lectures and get accurate, real-time transcriptions with speaker identification.",
       color: "bg-blue-500",
+      route: "/transcribe",
     },
     {
       icon: FileText,
       title: "Intelligent Notes",
       description:
         "Take organized notes with rich formatting, tags, and seamless integration with transcripts.",
-      color: "bg-green-500",
-    },
-    {
-      icon: Sparkles,
-      title: "AI Enhancement",
-      description:
-        "Transform your notes with AI-powered summaries, key concepts, and formatting improvements.",
-      color: "bg-purple-500",
+      color: "bg-primary",
+      route: "/notes",
     },
     {
       icon: Brain,
@@ -50,13 +45,15 @@ export default function Home() {
       description:
         "Generate personalized quizzes from your notes and transcripts to test your knowledge.",
       color: "bg-orange-500",
+      route: "/quizzes",
     },
     {
       icon: BarChart3,
-      title: "Progress Tracking",
+      title: "Quiz Analytics",
       description:
         "Monitor your learning progress with detailed analytics and performance insights.",
       color: "bg-pink-500",
+      route: "/analytics",
     },
   ];
 
@@ -138,24 +135,23 @@ export default function Home() {
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <Card
-                  key={index}
-                  className="border-border hover:shadow-lg transition-shadow"
-                >
-                  <CardHeader>
-                    <div
-                      className={`w-12 h-12 ${feature.color} rounded-lg flex items-center justify-center mb-4`}
-                    >
-                      <Icon className="h-6 w-6 text-white" />
-                    </div>
-                    <CardTitle className="text-xl">{feature.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-base">
-                      {feature.description}
-                    </CardDescription>
-                  </CardContent>
-                </Card>
+                <Link key={index} to={feature.route} className="block">
+                  <Card className="border-border hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer h-full">
+                    <CardHeader>
+                      <div
+                        className={`w-12 h-12 ${feature.color} rounded-lg flex items-center justify-center mb-4`}
+                      >
+                        <Icon className="h-6 w-6 text-white" />
+                      </div>
+                      <CardTitle className="text-xl">{feature.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription className="text-base">
+                        {feature.description}
+                      </CardDescription>
+                    </CardContent>
+                  </Card>
+                </Link>
               );
             })}
           </div>

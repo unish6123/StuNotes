@@ -438,15 +438,23 @@ export default function Quizzes() {
           correctAnswers: Math.round(
             (score / 100) * activeQuiz.questions.length
           ),
+          quizType:
+            activeQuiz.sourceType ||
+            (activeQuiz.title.includes("AI Quiz") ? "ai" : "content"),
+          sourceTitle: activeQuiz.sourceTitle || selectedSource,
+          completedAt: new Date().toISOString(),
+          timeTaken: Math.ceil(activeQuiz.questions.length * 1.5), // Estimated time
         }),
       });
 
       const data = await response.json();
       if (data.success) {
         console.log("Quiz score saved successfully");
+        toast.success("Quiz score saved to your analytics!");
       }
     } catch (error) {
       console.error("Error saving quiz score:", error);
+      toast.error("Failed to save quiz score");
     }
   };
 
@@ -634,7 +642,27 @@ export default function Quizzes() {
                   : "Keep Practicing!"}
               </Badge>
             </div>
+
+            <div className="mt-6 p-4 rounded-lg border bg-muted/50">
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <span className="text-sm text-green-600">
+                  Score saved to analytics!
+                </span>
+              </div>
+              <div className="text-center">
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={() => navigate("/analytics")}
+                  className="text-xs text-primary hover:text-primary/80"
+                >
+                  View Analytics Dashboard →
+                </Button>
+              </div>
+            </div>
           </CardHeader>
+
           <CardContent className="space-y-6">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Review Your Answers</h3>
@@ -728,7 +756,10 @@ export default function Quizzes() {
               </>
             ) : (
               <>
-                <h1 className="text-3xl font-bold mb-2">Quiz Center</h1>
+                <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+                  <Brain className="h-8 w-8 text-primary" />
+                  Quiz Center
+                </h1>
                 <p className="text-muted-foreground">
                   Create and take quizzes from your notes and transcripts
                 </p>
@@ -866,7 +897,7 @@ export default function Quizzes() {
                   variant="outline"
                   onClick={resetToMainView}
                   size="sm"
-                  className="text-xs sm:text-sm p-4"
+                  className="text-xs sm:text-sm p-4 bg-transparent"
                 >
                   Cancel
                 </Button>

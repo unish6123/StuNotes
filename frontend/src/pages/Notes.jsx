@@ -217,7 +217,10 @@ export default function Notes() {
       <div className="mb-8">
         <div className="flex-col sm:flex sm:flex-row justify-between items-center mb-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">My Notes</h1>
+            <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+              <FileText className="h-8 w-8 text-primary" />
+              My Notes
+            </h1>
             <p className="text-muted-foreground">
               Organize and manage your study notes
             </p>
