@@ -9,6 +9,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import Transcribe from "./pages/Transcribe";
 import Notes from "./pages/Notes";
 import Quizzes from "./pages/Quizzes";
+import Analytics from "./pages/Analytics";
 import Footer from "./components/Footer";
 import { ThemeProvider } from "@/components/theme-provider";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -48,6 +49,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Quizzes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute>
+                <Analytics />
               </ProtectedRoute>
             }
           />

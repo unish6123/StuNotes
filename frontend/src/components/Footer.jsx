@@ -38,6 +38,12 @@ export default function Footer() {
             >
               Quizzes
             </Link>
+            <Link
+              to="/analytics"
+              className="hover:text-emerald-600 transition-colors"
+            >
+              Analytics
+            </Link>
           </div>
 
           {/* Social Links */}

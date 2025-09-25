@@ -21,6 +21,7 @@ import {
   Mic,
   FileText,
   Brain,
+  BarChart3,
   LogOut,
   Settings,
   User,
@@ -39,6 +40,7 @@ export default function Navbar() {
     { name: "Transcribe", href: "/transcribe", icon: Mic },
     { name: "Notes", href: "/notes", icon: FileText },
     { name: "Quizzes", href: "/quizzes", icon: Brain },
+    { name: "Analytics", href: "/analytics", icon: BarChart3 },
   ];
 
   const isActive = (path) => location.pathname === path;

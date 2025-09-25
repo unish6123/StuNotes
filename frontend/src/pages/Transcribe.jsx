@@ -302,10 +302,6 @@ export default function Transcribe() {
     });
   };
 
-  // const handlePlayTranscript = (transcript) => {
-  //   toast.info(`Playing transcript: ${transcript.title}`);
-  // };
-
   const totalPages = Math.ceil(savedTranscripts.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedTranscripts = savedTranscripts.slice(
@@ -343,7 +339,10 @@ export default function Transcribe() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Audio Transcription</h1>
+        <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+          <Mic className="h-8 w-8 text-primary" />
+          Audio Transcription
+        </h1>
         <p className="text-muted-foreground">
           Record and transcribe your lectures in real-time
         </p>
