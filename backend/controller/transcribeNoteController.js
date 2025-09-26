@@ -1,6 +1,7 @@
-import noteModel from "../model/notesModel.js";
+import noteModel from "../model/transcribeModel.js";
 import { generateAIResponse } from "../services/gemini.js";
 import quizModel from "../model/quizModel.js";
+import transcribeModel from "../model/transcribeModel.js";
 
 const saveTNotes = async (req, res) =>{
     try {
@@ -12,14 +13,33 @@ const saveTNotes = async (req, res) =>{
         }
         const beautifiedNotes =  await generateAIResponse(content, false)
         console.log("This is coming from saveTNotes controller Ai notes", beautifiedNotes)
-        const notes = new noteModel({ userId, title, content : beautifiedNotes});
-        await notes.save();
+        const transcribe = new transcribeModel({ userId, title, content : beautifiedNotes});
+        await transcribe.save();
         res.json({success:true, message:"Transcribe saved successfully."})
     }catch(error){
         res.json({ success: false, message: error.message });
     }
 }
 
+const saveNotes = async(req,res)=>{
+    try {
+        const {title, content} = req.body;
+
+        if (!title || !content){
+            return res.json({success:false, message: "Missing title or the note"})
+        }
+
+        notes = new noteModel({ userId, title, content})
+        await notes.save()
+        res.json({success:true, message:"Notes saved to the database"})
+        
+    }catch(error){
+        res.json({success:false, message:error.message})
+    }
+}
+const delNote = async(req, res)=>{
+    const { title } = req.params;
+}
 
 
 const getSavedTNotes = async(req,res) =>{
@@ -80,4 +100,4 @@ const saveQuizScore = async(req, res) =>{
     }
 }
 
-export {saveTNotes, getSavedTNotes, getQuiz, saveQuizScore};
+export {saveTNotes, saveNotes, getSavedTNotes, getQuiz, saveQuizScore, delNote};

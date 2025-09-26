@@ -7,6 +7,6 @@ const noteSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-const noteModel = mongoose.models.Note || mongoose.model('Note', noteSchema);
+const noteModel = mongoose.models.Note || mongoose.model('Transcribe', noteSchema);
 
 export default noteModel;
