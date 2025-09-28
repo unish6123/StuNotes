@@ -5,6 +5,7 @@ const AuthContext = createContext(undefined);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingSignup, setPendingSignup] = useState(null);
   const backendURL = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
@@ -91,18 +92,63 @@ export function AuthProvider({ children }) {
     const data = await response.json();
 
     if (!response.ok || !data.success) {
-      throw new Error(data.message || "Sign up failed");
+      throw new Error(data.message || "Failed to send OTP");
     }
 
-    // After successful signup, the user is automatically signed in
-    const userData = {
-      id: Date.now().toString(), // Temporary ID since backend doesn't return user data on signup
-      name,
-      email,
-      avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${name}`,
-    };
+    // Store pending signup data for verification step
+    setPendingSignup({ name, email, password });
 
-    setUser(userData);
+    return {
+      success: true,
+      message: data.message || "OTP sent to your email",
+    };
+  };
+
+  const verifySignUp = async (otp) => {
+    if (!pendingSignup) {
+      throw new Error("No pending signup found. Please request OTP first.");
+    }
+
+    const response = await fetch(`${backendURL}/api/auth/verifySignUp`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        email: pendingSignup.email,
+        otp,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "OTP verification failed");
+    }
+
+    // After successful verification, user is automatically signed in
+    await checkAuthStatus(); // Refresh user state from backend
+    setPendingSignup(null); // Clear pending signup data
+
+    return {
+      success: true,
+      message: "Account created successfully",
+    };
+  };
+
+  const resendOtp = async () => {
+    if (!pendingSignup) {
+      throw new Error(
+        "No pending signup found. Please start signup process again."
+      );
+    }
+
+    return await signUp(
+      pendingSignup.name,
+      pendingSignup.email,
+      pendingSignup.password
+    );
   };
 
   const signOut = async () => {
@@ -119,6 +165,7 @@ export function AuthProvider({ children }) {
       console.error("Sign out error:", error);
     } finally {
       setUser(null);
+      setPendingSignup(null);
 
       localStorage.clear();
       sessionStorage.clear();
@@ -135,7 +182,10 @@ export function AuthProvider({ children }) {
         isLoading,
         signIn,
         signUp,
+        verifySignUp,
+        resendOtp,
         signOut,
+        pendingSignup: !!pendingSignup,
       }}
     >
       {children}

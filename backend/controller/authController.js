@@ -15,9 +15,15 @@ const getOtp = async (req, res) => {
     if (userEmail) {
       return res.json({
         success: false,
-        message: "Your account already exists or this email arealy exists.",
+        message: "Your account already exists or this email already exists.",
       });
     }
+
+    const existingTemp = await tempModel.findOne({ email });
+    if (existingTemp) {
+      await tempModel.deleteOne({ email });
+    }
+
     const otp = crypto.randomInt(100000, 999999).toString();
     const hashedPassword = await bcrypt.hash(password, 10);
     const otpExpireAt = Date.now() + 10 * 60 * 1000;
@@ -30,7 +36,7 @@ const getOtp = async (req, res) => {
       otpExpireAt,
     });
 
-    tempUser.save();
+    await tempUser.save();
     await transporter.sendMail({
       from: process.env.SENDER_EMAIL,
       to: email,
@@ -84,7 +90,7 @@ const verifySignUp = async (req, res) => {
       return res.json({ success: false, message: "No OTP request found" });
     }
 
-    if (record.expiresAt < Date.now()) {
+    if (record.otpExpireAt < Date.now()) {
       return res.json({ success: false, message: "OTP expired" });
     }
 
@@ -92,13 +98,16 @@ const verifySignUp = async (req, res) => {
       return res.json({ success: false, message: "Invalid OTP" });
     }
 
-    const user = userModel({
+    const user = new userModel({
       name: record.name,
       email: record.email,
       password: record.password,
     });
 
+    await user.save();
+
     await tempModel.deleteOne({ email });
+
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
@@ -109,14 +118,11 @@ const verifySignUp = async (req, res) => {
       sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    try {
-      return res.json({
-        success: true,
-        message: "User verified successfullly.",
-      });
-    } catch (error) {
-      res.json({ success: false, message: error.message });
-    }
+
+    return res.json({
+      success: true,
+      message: "User verified successfullly.",
+    });
   } catch (error) {
     res.json({ success: false, message: error.message });
   }
