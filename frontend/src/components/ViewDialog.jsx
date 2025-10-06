@@ -56,10 +56,13 @@ export default function ViewDialog({
 
   const getBadgeVariant = () => {
     if (itemType === "transcript") {
-      return "secondary";
+      return "default";
     }
     return item[typeProperty] === "transcribed" ? "default" : "secondary";
   };
+
+  const canEdit = itemType === "note" && item[typeProperty] !== "transcribed";
+  const showEditButton = canEdit && onEdit;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -125,17 +128,21 @@ export default function ViewDialog({
         </div>
 
         <div className="flex gap-2 pt-4 border-t">
-          <Button
-            onClick={() => onEdit(item)}
-            variant={itemType === "note" ? "outline" : "secondary"}
-            className="flex-1"
-          >
-            <Edit className="h-4 w-4 mr-2" />
-            {itemType === "note" ? "Edit Note" : "Edit"}
-          </Button>
+          {showEditButton && (
+            <Button
+              onClick={() => onEdit(item)}
+              variant="outline"
+              className="flex-1"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Note
+            </Button>
+          )}
           <Button
             onClick={() => onTakeQuiz(item)}
-            className="flex-1 bg-primary hover:bg-green-600 text-white"
+            className={`${
+              showEditButton ? "flex-1" : "w-full"
+            } bg-primary hover:bg-green-600 text-white`}
           >
             <Play className="h-4 w-4 mr-2" />
             Take Quiz

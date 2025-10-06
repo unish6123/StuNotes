@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,10 +16,21 @@ export default function CreateNoteDialog({ isOpen, onClose, onSave, loading }) {
     title: "",
     content: "",
   });
+  const saveInProgressRef = useRef(false);
 
   const handleSave = () => {
+    if (saveInProgressRef.current || loading) {
+      console.log(" Save already in progress, ignoring duplicate call");
+      return;
+    }
+
+    saveInProgressRef.current = true;
     onSave(newNote);
     setNewNote({ title: "", content: "" });
+
+    setTimeout(() => {
+      saveInProgressRef.current = false;
+    }, 1000);
   };
 
   const handleClose = () => {
@@ -70,7 +81,7 @@ export default function CreateNoteDialog({ isOpen, onClose, onSave, loading }) {
         </div>
         <Button
           onClick={handleSave}
-          disabled={loading}
+          disabled={loading || saveInProgressRef.current}
           className="w-full text-white mt-4"
         >
           {loading ? "Creating..." : "Create Note"}

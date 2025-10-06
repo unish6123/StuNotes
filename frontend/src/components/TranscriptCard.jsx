@@ -7,13 +7,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Play, MoreVertical, Eye, Edit, FileText } from "lucide-react";
+import { Play, MoreVertical, Eye, FileText } from "lucide-react";
 import DeleteDialog from "./DeleteDialog";
 
 export default function TranscriptCard({
   transcript,
   onView,
-  onEdit,
   onTakeQuiz,
   onDelete,
   deleteLoading,
@@ -48,10 +47,6 @@ export default function TranscriptCard({
                 <DropdownMenuItem onClick={() => onView(transcript)}>
                   <Eye className="h-4 w-4 mr-2" />
                   Open
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onEdit(transcript)}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onTakeQuiz(transcript)}>
                   <Play className="h-4 w-4 mr-2" />

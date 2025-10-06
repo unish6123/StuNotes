@@ -63,9 +63,12 @@ export default function Transcribe() {
 
   const fetchSavedTranscripts = async () => {
     try {
-      const response = await fetch(`${backendURL}/api/transcribe/getNotes`, {
-        credentials: "include",
-      });
+      const response = await fetch(
+        `${backendURL}/api/transcribe/getTranscribedNotes`,
+        {
+          credentials: "include",
+        }
+      );
       const data = await response.json();
       if (data.notes) {
         const sortedTranscripts = data.notes.sort(
@@ -128,17 +131,20 @@ export default function Transcribe() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${backendURL}/api/transcribe/saveNotes`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          title: title.trim(),
-          content: transcript,
-        }),
-      });
+      const response = await fetch(
+        `${backendURL}/api/transcribe/saveTranscribeNotes`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            title: title.trim(),
+            content: transcript,
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -206,14 +212,15 @@ export default function Transcribe() {
   const handleDeleteTranscript = async (transcriptId, transcriptTitle) => {
     setDeleteLoading(transcriptId);
     try {
-      const response = await fetch(`${backendURL}/api/transcribe/deleteNote`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ noteId: transcriptId }),
-      });
+      const response = await fetch(
+        `${backendURL}/api/transcribe/deleteNote/${encodeURIComponent(
+          transcriptTitle
+        )}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        }
+      );
 
       const data = await response.json();
 
@@ -488,16 +495,16 @@ export default function Transcribe() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Saved Transcripts</CardTitle>
+            <CardTitle>Transcribed Notes</CardTitle>
             <CardDescription>
-              Your previously recorded and transcribed lectures
+              Your previously recorded lectures as transcribed and clean notes.
             </CardDescription>
           </CardHeader>
           <CardContent>
             {savedTranscripts.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">
-                No saved transcripts yet. Start recording to create your first
-                transcript!
+                No saved transcribed notes yet. Start recording to create your
+                first transcript!
               </p>
             ) : (
               <div className="space-y-4">
@@ -507,7 +514,6 @@ export default function Transcribe() {
                       key={transcript._id}
                       transcript={transcript}
                       onView={handleViewTranscript}
-                      onEdit={handleEditTranscript}
                       onTakeQuiz={handleTakeQuiz}
                       onDelete={handleDeleteTranscript}
                       deleteLoading={deleteLoading}

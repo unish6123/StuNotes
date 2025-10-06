@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, FileText } from "lucide-react";
@@ -14,6 +14,7 @@ import ViewDialog from "../components/ViewDialog";
 export default function Notes() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const saveInProgressRef = useRef(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -42,7 +43,7 @@ export default function Notes() {
         credentials: "include",
       });
       const data = await response.json();
-      if (data.notes) {
+      if (data.success && data.notes) {
         const transformedNotes = data.notes.map((note) => ({
           id: note._id,
           title: note.title,
@@ -77,11 +78,17 @@ export default function Notes() {
   );
 
   const handleCreateNote = async (newNote) => {
+    if (saveInProgressRef.current) {
+      console.log("[v0] Save already in progress, skipping duplicate call");
+      return;
+    }
+
     if (!newNote.title || !newNote.content) {
       toast.error("Please provide both title and content");
       return;
     }
 
+    saveInProgressRef.current = true;
     setLoading(true);
     try {
       const response = await fetch(`${backendURL}/api/transcribe/saveNotes`, {
@@ -110,20 +117,22 @@ export default function Notes() {
       toast.error("Failed to create note");
     } finally {
       setLoading(false);
+      saveInProgressRef.current = false;
     }
   };
 
   const handleDeleteNote = async (noteId, noteTitle) => {
     setDeleteLoading(noteId);
     try {
-      const response = await fetch(`${backendURL}/api/transcribe/deleteNote`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ noteId }),
-      });
+      const response = await fetch(
+        `${backendURL}/api/transcribe/deleteNote/${encodeURIComponent(
+          noteTitle
+        )}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        }
+      );
 
       const data = await response.json();
 
