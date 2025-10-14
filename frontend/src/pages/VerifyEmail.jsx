@@ -24,8 +24,7 @@ export default function VerifyEmail() {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { signUp } = useAuth();
-  const backendURL = import.meta.env.VITE_BACKEND_URL;
+  const { verifySignUp, resendOtp } = useAuth();
 
   const { email, name, password } = location.state || {};
 
@@ -81,34 +80,15 @@ export default function VerifyEmail() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${backendURL}/api/auth/verifySignup`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          name,
-          password,
-          otp: otpString,
-        }),
-      });
+      const result = await verifySignUp(otpString);
 
-      const result = await response.json();
-
-      if (result.success) {
-        toast.success("Email verified! Account created successfully.");
-        // Use the existing signUp method to set auth context
-        await signUp(name, email, password);
-        navigate("/");
-      } else {
-        toast.error(result.message || "Invalid verification code");
-        // Clear OTP on error
-        setOtp(["", "", "", "", "", ""]);
-        inputRefs.current[0]?.focus();
-      }
+      toast.success("Email verified! Account created successfully.");
+      navigate("/");
     } catch (error) {
-      toast.error("Network error. Please try again.");
+      toast.error(error.message || "Invalid verification code");
+      // Clear OTP on error
+      setOtp(["", "", "", "", "", ""]);
+      inputRefs.current[0]?.focus();
     } finally {
       setIsLoading(false);
     }
@@ -118,26 +98,14 @@ export default function VerifyEmail() {
     setIsResending(true);
 
     try {
-      const response = await fetch(`${backendURL}/api/auth/signUp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, email, password }),
-      });
+      const result = await resendOtp();
 
-      const result = await response.json();
-
-      if (result.success) {
-        toast.success("New verification code sent!");
-        setTimeLeft(300); // Reset timer
-        setOtp(["", "", "", "", "", ""]); // Clear current OTP
-        inputRefs.current[0]?.focus();
-      } else {
-        toast.error(result.message || "Failed to resend code");
-      }
+      toast.success("New verification code sent!");
+      setTimeLeft(300); // Reset timer
+      setOtp(["", "", "", "", "", ""]); // Clear current OTP
+      inputRefs.current[0]?.focus();
     } catch (error) {
-      toast.error("Network error. Please try again.");
+      toast.error(error.message || "Failed to resend code");
     } finally {
       setIsResending(false);
     }

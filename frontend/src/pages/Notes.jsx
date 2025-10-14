@@ -231,7 +231,7 @@ export default function Notes() {
               My Notes
             </h1>
             <p className="text-muted-foreground">
-              Organize and manage your study notes
+              Manage and view both transcribed and manual notes.
             </p>
           </div>
 

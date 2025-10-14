@@ -21,8 +21,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { SignUpSkeleton } from "@/components/skeletons/AuthSkeleton";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function SignUp() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -38,9 +38,9 @@ export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-  // const { signUp } = useAuth();
   const navigate = useNavigate();
-  const backendURL = import.meta.env.VITE_BACKEND_URL;
+  const { signUp } = useAuth();
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsInitialLoading(false);
@@ -107,39 +107,25 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${backendURL}/api/auth/signUp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formData.name,
+      const result = await signUp(
+        formData.name,
+        formData.email,
+        formData.password
+      );
+
+      toast.success("Verification code sent to your email!");
+      navigate("/verify-email", {
+        state: {
           email: formData.email,
+          name: formData.name,
           password: formData.password,
-        }),
+        },
       });
-
-      const result = await response.json();
-
-      if (result.success) {
-        toast.success("Verification code sent to your email!");
-        // Navigate to verification page with user data
-        navigate("/verify-email", {
-          state: {
-            email: formData.email,
-            name: formData.name,
-            password: formData.password,
-          },
-        });
-      } else {
-        toast.error(result.message || "Failed to send verification code");
-        setErrors({
-          general: result.message || "Failed to send verification code",
-        });
-      }
     } catch (error) {
-      toast.error("Network error. Please try again.");
-      setErrors({ general: "Network error. Please try again." });
+      toast.error(error.message || "Network error. Please try again.");
+      setErrors({
+        general: error.message || "Network error. Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -433,7 +419,7 @@ export default function SignUp() {
               <div className="text-center text-sm text-gray-600 dark:text-gray-400">
                 Already have an account?{" "}
                 <Link
-                  to="/sign-in"
+                  to="/signin"
                   className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium"
                 >
                   Sign in
