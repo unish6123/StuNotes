@@ -121,12 +121,12 @@ const getSavedTNotes = async (req, res) => {
     const transcribedNotes = await transcribeModel
       .find({ userId })
       .sort({ createdAt: -1 });
-    console.log(
-      " Found transcribed notes:",
-      transcribedNotes.length,
-      "from collection:",
-      transcribeModel.collection.name
-    );
+    // console.log(
+    //   " Found transcribed notes:",
+    //   transcribedNotes.length,
+    //   "from collection:",
+    //   transcribeModel.collection.name
+    // );
 
     const allNotes = [
       ...manualNotes.map((note) => {

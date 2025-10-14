@@ -5,8 +5,8 @@ async function generateAIResponse(prompt, forQuiz) {
   // Initialize the generative AI model with your API key
   const genAI = new GoogleGenerativeAI(process.env.geminiApiKey);
 
-  // Use the model you want (gemini-1.5-flash, gemini-1.5-pro, etc.)
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  // Use the model you want (gemini-2.5-flash, etc.)
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   try {
     // const finalPrompt = forQuiz
