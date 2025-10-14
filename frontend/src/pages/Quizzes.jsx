@@ -520,7 +520,9 @@ export default function Quizzes() {
                       }
                       size="sm"
                       onClick={() => goToQuestion(index)}
-                      className="h-8 w-12"
+                      className={`h-8 w-12 ${
+                        currentQuestion == index ? "text-white" : ""
+                      }`}
                     >
                       {index + 1}
                     </Button>
@@ -838,19 +840,24 @@ export default function Quizzes() {
                 transcripts using AI
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
                 <Select
                   value={selectedSource}
                   onValueChange={setSelectedSource}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-fit">
                     <SelectValue placeholder="Select source..." />
                   </SelectTrigger>
                   <SelectContent>
                     {notes.map((note) => (
                       <SelectItem key={note._id} value={note.title}>
-                        {note.title}
+                        <span
+                          className="block truncate max-w-[250px] sm:max-w-[400px]"
+                          title={note.title}
+                        >
+                          {note.title}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -859,7 +866,7 @@ export default function Quizzes() {
                 <Button
                   onClick={generateQuiz}
                   disabled={loading}
-                  className="gap-2 text-white cursor-pointer"
+                  className="gap-2 text-white cursor-pointer w-full md:w-auto whitespace-nowrap"
                 >
                   <Brain className="h-4 w-4" />
                   {loading ? "Generating..." : "Generate AI Quiz"}

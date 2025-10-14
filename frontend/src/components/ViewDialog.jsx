@@ -82,7 +82,12 @@ export default function ViewDialog({
               <DialogDescription className="flex items-center gap-2 mt-2">
                 <Calendar className="h-4 w-4" />
                 {getDisplayDate()}
-                <Badge variant={getBadgeVariant()} className="ml-2">
+                <Badge
+                  variant={getBadgeVariant()}
+                  className={`ml-2 ${
+                    getBadgeVariant() == "default" ? "text-white" : ""
+                  }`}
+                >
                   {getBadgeText()}
                 </Badge>
               </DialogDescription>

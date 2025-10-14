@@ -105,9 +105,14 @@ export function AuthProvider({ children }) {
   };
 
   const verifySignUp = async (otp) => {
+    // console.log(" verifySignUp called with OTP:", otp);
+
     if (!pendingSignup) {
+      console.log(" ERROR: No pending signup found");
       throw new Error("No pending signup found. Please request OTP first.");
     }
+
+    // console.log(" Pending signup data:", { email: pendingSignup.email });
 
     const response = await fetch(`${backendURL}/api/auth/verifySignUp`, {
       method: "POST",
@@ -121,15 +126,32 @@ export function AuthProvider({ children }) {
       }),
     });
 
-    const data = await response.json();
+    // console.log(" Response status:", response.status);
+    // console.log(" Response ok:", response.ok);
 
-    if (!response.ok || !data.success) {
+    const data = await response.json();
+    // console.log(" Response data:", data);
+
+    if (!data.success) {
+      console.log(" ERROR: Backend returned success=false");
       throw new Error(data.message || "OTP verification failed");
     }
 
-    // After successful verification, user is automatically signed in
-    await checkAuthStatus(); // Refresh user state from backend
+    // console.log(" Verification successful, user data:", data.user);
+
+    if (data.user) {
+      const userData = {
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${data.user.name}`,
+      };
+      console.log(" Setting user state:", userData);
+      setUser(userData);
+    }
+
     setPendingSignup(null); // Clear pending signup data
+    // console.log(" Cleared pending signup");
 
     return {
       success: true,
@@ -153,14 +175,14 @@ export function AuthProvider({ children }) {
 
   const signOut = async () => {
     try {
-      console.log("Attempting to sign out...");
+      // console.log("Attempting to sign out...");
 
       await fetch(`${backendURL}/api/auth/signOut`, {
         method: "GET",
         credentials: "include",
       });
 
-      console.log("Backend signOut called successfully");
+      // console.log("Backend signOut called successfully");
     } catch (error) {
       console.error("Sign out error:", error);
     } finally {
@@ -170,7 +192,7 @@ export function AuthProvider({ children }) {
       localStorage.clear();
       sessionStorage.clear();
 
-      console.log("User state and storage cleared completely");
+      // console.log("User state and storage cleared completely");
     }
   };
 
@@ -181,9 +203,9 @@ export function AuthProvider({ children }) {
         isAuthenticated: !!user,
         isLoading,
         signIn,
-        signUp,
-        verifySignUp,
-        resendOtp,
+        signUp, // First step: sends OTP
+        verifySignUp, // Second step: verifies OTP and creates account
+        resendOtp, // Resend OTP if needed
         signOut,
         pendingSignup: !!pendingSignup,
       }}
