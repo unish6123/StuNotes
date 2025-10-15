@@ -82,15 +82,11 @@ export default function Home() {
             AI-powered quiz generation to help students study more effectively
             and achieve better results.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild className="text-white">
-              <Link to="/sign-up">
-                Get Started
-                <ArrowRight className="ml-2 h-5 w-5" />
+          <div className="mx-auto">
+            <Button size="lg" className="text-white font-semibold" asChild>
+              <Link to="/transcribe">
+                Get Started <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
-            </Button>
-            <Button variant="outline" size="lg" asChild>
-              <Link to="/transcribe">Try Demo</Link>
             </Button>
           </div>
         </div>
