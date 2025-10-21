@@ -46,7 +46,7 @@ export default function Quizzes() {
   const [generatedQuiz, setGeneratedQuiz] = useState(null);
   const [contentQuiz, setContentQuiz] = useState(null);
   const [contentQuizLoading, setContentQuizLoading] = useState(false);
-  const [quizMode, setQuizMode] = useState(null); // 'content', 'ai', or null
+  const [quizMode, setQuizMode] = useState(null);
   const [showQuestionNav, setShowQuestionNav] = useState(false);
 
   const { user } = useAuth();
@@ -116,7 +116,7 @@ export default function Quizzes() {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", // This handles the userAuth middleware
+        credentials: "include",
         body: JSON.stringify({
           title: selectedNote.title,
           questionCount: Number.parseInt(questionCount),
@@ -132,13 +132,10 @@ export default function Quizzes() {
 
       let quizData;
       if (backendResponse.quiz && Array.isArray(backendResponse.quiz)) {
-        // Backend returns {quiz: [...]}
         quizData = backendResponse.quiz;
       } else if (typeof backendResponse.quiz === "string") {
-        // Handle string response with potential JSON
         let cleanQuizData = backendResponse.quiz.trim();
 
-        // Remove markdown code blocks if present
         cleanQuizData = cleanQuizData
           .replace(/^```json\s*/i, "")
           .replace(/^```\s*/, "")
@@ -175,10 +172,8 @@ export default function Quizzes() {
         .map((q, index) => {
           console.log(` Processing question ${index + 1}:`, q);
 
-          // Extract question text
           const questionText = q.question || q.q || `Question ${index + 1}`;
 
-          // Extract options - handle different formats
           let options = [];
           if (q.options && Array.isArray(q.options)) {
             options = q.options;
@@ -190,7 +185,6 @@ export default function Quizzes() {
             options = [q.a, q.b, q.c, q.d].filter(Boolean);
           }
 
-          // Validate options are not placeholder letters
           const isPlaceholderOptions = options.every(
             (opt) =>
               typeof opt === "string" &&
@@ -205,10 +199,9 @@ export default function Quizzes() {
               } has placeholder or insufficient options, skipping:`,
               options
             );
-            return null; // Skip this question
+            return null;
           }
 
-          // Validate options
           options = options.filter(
             (opt) => opt && typeof opt === "string" && opt.trim().length > 0
           );
@@ -220,24 +213,21 @@ export default function Quizzes() {
               } has insufficient valid options after filtering:`,
               options
             );
-            return null; // Skip this question
+            return null;
           }
 
-          // Extract correct answer
           let correct = 0;
           if (typeof q.correct === "number") {
             correct = q.correct;
           } else if (typeof q.correctAnswer === "number") {
             correct = q.correctAnswer;
           } else if (typeof q.correctOption === "number") {
-            correct = q.correctOption - 1; // Convert 1-based to 0-based
+            correct = q.correctOption - 1;
           } else if (typeof q.answer === "string") {
-            // Find the answer text in options
             const answerIndex = options.findIndex((opt) => opt === q.answer);
             if (answerIndex !== -1) {
               correct = answerIndex;
             } else {
-              // Fallback to letter mapping if needed
               const answerMap = {
                 a: 0,
                 b: 1,
@@ -253,7 +243,6 @@ export default function Quizzes() {
             }
           }
 
-          // Ensure correct index is valid
           correct = Math.max(0, Math.min(options.length - 1, correct));
 
           console.log(` Formatted question ${index + 1}:`, {
@@ -270,7 +259,7 @@ export default function Quizzes() {
             correct: correct,
           };
         })
-        .filter(Boolean); // Remove null questions
+        .filter(Boolean);
 
       if (formattedQuestions.length === 0) {
         throw new Error(
@@ -302,44 +291,148 @@ export default function Quizzes() {
   const generateContentQuiz = async (content) => {
     setContentQuizLoading(true);
     try {
-      const words = content.content
-        .split(" ")
-        .filter((word) => word.length > 4);
-      const uniqueWords = [...new Set(words)].slice(0, 10);
+      console.log(` Generating AI quiz for content: ${content.title}`);
 
-      const questions = uniqueWords.map((word, index) => {
-        const sentence =
-          content.content.split(".").find((s) => s.includes(word)) ||
-          content.content.substring(0, 100);
-        const options = [
-          word,
-          uniqueWords[(index + 1) % uniqueWords.length] || "option1",
-          uniqueWords[(index + 2) % uniqueWords.length] || "option2",
-          uniqueWords[(index + 3) % uniqueWords.length] || "option3",
-        ].sort(() => Math.random() - 0.5);
-
-        return {
-          id: index + 1,
-          type: "multiple-choice",
-          question: `What word completes this context: "${sentence.replace(
-            word,
-            "____"
-          )}"?`,
-          options: options,
-          correct: options.indexOf(word),
-        };
+      const response = await fetch(`${backendURL}/api/transcribe/getQuiz`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          title: content.title,
+          questionCount: 10,
+        }),
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const backendResponse = await response.json();
+      console.log("[Backend response:", backendResponse);
+
+      let quizData;
+      if (backendResponse.quiz && Array.isArray(backendResponse.quiz)) {
+        quizData = backendResponse.quiz;
+      } else if (typeof backendResponse.quiz === "string") {
+        let cleanQuizData = backendResponse.quiz.trim();
+        cleanQuizData = cleanQuizData
+          .replace(/^```json\s*/i, "")
+          .replace(/^```\s*/, "")
+          .replace(/\s*```$/g, "")
+          .trim();
+        quizData = JSON.parse(cleanQuizData);
+      } else {
+        throw new Error(`Unexpected backend response format`);
+      }
+
+      if (!Array.isArray(quizData)) {
+        throw new Error(`Quiz data is not an array`);
+      }
+
+      const formattedQuestions = quizData
+        .map((q, index) => {
+          const questionText = q.question || q.q || `Question ${index + 1}`;
+          let options = [];
+
+          if (q.options && Array.isArray(q.options)) {
+            options = q.options;
+          } else if (q.option1 && q.option2) {
+            options = [q.option1, q.option2, q.option3, q.option4].filter(
+              Boolean
+            );
+          } else if (q.a && q.b) {
+            options = [q.a, q.b, q.c, q.d].filter(Boolean);
+          }
+
+          const isPlaceholderOptions = options.every(
+            (opt) =>
+              typeof opt === "string" &&
+              opt.trim().length <= 2 &&
+              /^[A-D]$/i.test(opt.trim())
+          );
+
+          if (isPlaceholderOptions || options.length < 2) {
+            console.warn(
+              ` Question ${
+                index + 1
+              } has placeholder or insufficient options, skipping`
+            );
+            return null;
+          }
+
+          options = options.filter(
+            (opt) => opt && typeof opt === "string" && opt.trim().length > 0
+          );
+
+          if (options.length < 2) {
+            console.warn(
+              ` Question ${
+                index + 1
+              } has insufficient valid options after filtering`
+            );
+            return null;
+          }
+
+          let correct = 0;
+          if (typeof q.correct === "number") {
+            correct = q.correct;
+          } else if (typeof q.correctAnswer === "number") {
+            correct = q.correctAnswer;
+          } else if (typeof q.correctOption === "number") {
+            correct = q.correctOption - 1;
+          } else if (typeof q.answer === "string") {
+            const answerIndex = options.findIndex((opt) => opt === q.answer);
+            if (answerIndex !== -1) {
+              correct = answerIndex;
+            } else {
+              const answerMap = {
+                a: 0,
+                b: 1,
+                c: 2,
+                d: 3,
+                A: 0,
+                B: 1,
+                C: 2,
+                D: 3,
+              };
+              correct =
+                answerMap[q.answer] !== undefined ? answerMap[q.answer] : 0;
+            }
+          }
+
+          correct = Math.max(0, Math.min(options.length - 1, correct));
+
+          return {
+            id: index + 1,
+            type: "multiple-choice",
+            question: questionText,
+            options: options,
+            correct: correct,
+          };
+        })
+        .filter(Boolean);
+
+      if (formattedQuestions.length === 0) {
+        throw new Error(
+          "No valid questions could be generated from the AI response"
+        );
+      }
+
       setContentQuiz({
-        title: `Quick Quiz: ${content.title}`,
-        questions: questions,
+        title: `Quiz: ${content.title}`,
+        questions: formattedQuestions,
         sourceType: content.type,
         sourceTitle: content.title,
       });
-      toast.success(`Quiz generated from ${content.type}!`);
+
+      toast.success(
+        `AI Quiz generated successfully! ${formattedQuestions.length} questions created.`
+      );
     } catch (error) {
-      console.error("Error generating content quiz:", error);
-      toast.error("Failed to generate quiz");
+      console.error(" Error generating content quiz:", error);
+      toast.error(`Failed to generate quiz: ${error.message}`);
     } finally {
       setContentQuizLoading(false);
     }
@@ -443,7 +536,7 @@ export default function Quizzes() {
             (activeQuiz.title.includes("AI Quiz") ? "ai" : "content"),
           sourceTitle: activeQuiz.sourceTitle || selectedSource,
           completedAt: new Date().toISOString(),
-          timeTaken: Math.ceil(activeQuiz.questions.length * 1.5), // Estimated time
+          timeTaken: Math.ceil(activeQuiz.questions.length * 1.5),
         }),
       });
 
@@ -521,7 +614,7 @@ export default function Quizzes() {
                       size="sm"
                       onClick={() => goToQuestion(index)}
                       className={`h-8 w-12 ${
-                        currentQuestion == index ? "text-white" : ""
+                        currentQuestion === index ? "text-white" : ""
                       }`}
                     >
                       {index + 1}
@@ -846,7 +939,7 @@ export default function Quizzes() {
                   value={selectedSource}
                   onValueChange={setSelectedSource}
                 >
-                  <SelectTrigger className="w-fit">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select source..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -872,6 +965,7 @@ export default function Quizzes() {
                   {loading ? "Generating..." : "Generate AI Quiz"}
                 </Button>
               </div>
+              {/* </CHANGE> */}
             </CardContent>
           </Card>
         )}

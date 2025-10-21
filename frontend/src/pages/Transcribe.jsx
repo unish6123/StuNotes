@@ -182,16 +182,57 @@ export default function Transcribe() {
       if (data.quiz) {
         toast.success("Quiz generated successfully!");
         try {
-          const quizData = JSON.parse(data.quiz);
+          let quizData;
+          if (Array.isArray(data.quiz)) {
+            quizData = data.quiz;
+          } else if (typeof data.quiz === "string") {
+            // Clean markdown code blocks if present
+            let cleanQuizData = data.quiz.trim();
+            cleanQuizData = cleanQuizData
+              .replace(/^```json\s*/i, "")
+              .replace(/^```\s*/, "")
+              .replace(/\s*```$/g, "")
+              .trim();
+            quizData = JSON.parse(cleanQuizData);
+          } else {
+            throw new Error("Unexpected quiz data format");
+          }
+
           const formattedQuiz = {
             title: `Quiz: ${transcriptTitle}`,
-            questions: quizData.map((q, index) => ({
-              id: index + 1,
-              type: "multiple-choice",
-              question: q.question,
-              options: [q.option1, q.option2, q.option3, q.option4],
-              correct: q.correctOption - 1,
-            })),
+            questions: quizData.map((q, index) => {
+              // Extract options from either array or individual properties
+              let options = [];
+              if (q.options && Array.isArray(q.options)) {
+                options = q.options;
+              } else if (q.option1 && q.option2) {
+                options = [q.option1, q.option2, q.option3, q.option4].filter(
+                  Boolean
+                );
+              }
+
+              // Determine correct answer index
+              let correct = 0;
+              if (typeof q.correct === "number") {
+                correct = q.correct;
+              } else if (typeof q.correctOption === "number") {
+                correct = q.correctOption - 1;
+              } else if (typeof q.answer === "string") {
+                // Find the index of the answer in options
+                const answerIndex = options.findIndex(
+                  (opt) => opt === q.answer
+                );
+                correct = answerIndex !== -1 ? answerIndex : 0;
+              }
+
+              return {
+                id: index + 1,
+                type: "multiple-choice",
+                question: q.question,
+                options: options,
+                correct: correct,
+              };
+            }),
           };
           navigate("/quizzes", { state: { generatedQuiz: formattedQuiz } });
         } catch (parseError) {

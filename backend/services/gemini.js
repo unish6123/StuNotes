@@ -16,7 +16,7 @@ async function generateAIResponse(prompt, forQuiz) {
     //     prompt;
 
     const finalPrompt = forQuiz
-      ? `Generate exactly 20 multiple choice questions from the given content. Return ONLY a JSON array with this exact format:
+      ? `Generate 10 unique and non-repetative multiple choice questions from the given content. Return ONLY a JSON array with this exact format and remember question shouldn't be similar in any way to each other:
             [
               {
                 "question": "Your question here?",
