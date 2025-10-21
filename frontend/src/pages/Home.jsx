@@ -127,19 +127,21 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="sm:mx-auto sm:max-w-[65vw] grid sm:grid-cols-2 gap-5 sm:gap-8">
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
                 <Link key={index} to={feature.route} className="block">
-                  <Card className="border-border hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer h-full">
+                  <Card className="border-border hover:shadow-lg hover:scale-100 transition-all duration-200 cursor-pointer h-full sm:max-w-[30rem] sm:mx-auto">
                     <CardHeader>
                       <div
-                        className={`w-12 h-12 ${feature.color} rounded-lg flex items-center justify-center mb-4`}
+                        className={`w-12 h-12 ${feature.color} rounded-lg flex items-center justify-center mb-2`}
                       >
                         <Icon className="h-6 w-6 text-white" />
                       </div>
-                      <CardTitle className="text-xl">{feature.title}</CardTitle>
+                      <CardTitle className="text-xl mb-[-1rem]">
+                        {feature.title}
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <CardDescription className="text-base">
