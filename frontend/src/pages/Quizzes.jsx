@@ -810,8 +810,11 @@ export default function Quizzes() {
             </div>
 
             <div className="flex gap-4 justify-center">
-              <Button onClick={() => startQuiz(activeQuiz)} className="gap-2">
-                <RotateCcw className="h-4 w-4 text-white" />
+              <Button
+                onClick={() => startQuiz(activeQuiz)}
+                className="gap-2 text-white"
+              >
+                <RotateCcw className="h-4 w-4" />
                 Retake Quiz
               </Button>
               <Button variant="outline" onClick={resetToMainView}>
