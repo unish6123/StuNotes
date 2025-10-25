@@ -811,7 +811,7 @@ export default function Quizzes() {
 
             <div className="flex gap-4 justify-center">
               <Button onClick={() => startQuiz(activeQuiz)} className="gap-2">
-                <RotateCcw className="h-4 w-4" />
+                <RotateCcw className="h-4 w-4 text-white" />
                 Retake Quiz
               </Button>
               <Button variant="outline" onClick={resetToMainView}>
@@ -965,7 +965,6 @@ export default function Quizzes() {
                   {loading ? "Generating..." : "Generate AI Quiz"}
                 </Button>
               </div>
-              {/* </CHANGE> */}
             </CardContent>
           </Card>
         )}

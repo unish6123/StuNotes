@@ -69,8 +69,8 @@ export default function ViewDialog({
       <DialogContent
         className={
           itemType === "note"
-            ? "min-w-[70vw] max-w-none max-h-[90vh]"
-            : "min-w-[70vw] max-w-4xl max-h-[80vh]"
+            ? "min-w-[70vw] max-w-none"
+            : "min-w-[70vw] max-w-4xl"
         }
       >
         <DialogHeader>
@@ -103,7 +103,10 @@ export default function ViewDialog({
                     <Calendar className="h-4 w-4" />
                     {getDisplayDate()}
                   </div>
-                  <Badge variant={getBadgeVariant()} className="text-xs">
+                  <Badge
+                    variant={getBadgeVariant()}
+                    className="text-xs text-white"
+                  >
                     {getBadgeText()}
                   </Badge>
                 </div>
