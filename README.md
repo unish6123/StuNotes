@@ -18,7 +18,7 @@ With StuNotes, students can:
 
 ---
 
-## 🧩 Tech Stack
+## Tech Stack
 
 ### **Frontend**
 
@@ -35,7 +35,7 @@ With StuNotes, students can:
 
 ---
 
-## ✨ Features
+## Features
 
 - **Speech-to-Text Transcription** — Convert lectures or audio input into text instantly.
 - **Smart Note Organization** — Clean, structured notes with easy access.
@@ -71,7 +71,7 @@ npm install
 npm run dev
 ```
 
-The frontend should now be running at [http://localhost:5173](http://localhost:5173) (or the port configured by Vite/React).
+The frontend should now be running at [http://localhost:5173](http://localhost:5173) 
 
 ### **Backend Setup**
 
@@ -81,39 +81,7 @@ npm install
 npm run dev
 ```
 
-Backend will start on [http://localhost:4000](http://localhost:4000) (configurable in `.env`).
-
----
-
-## Environment Variables
-
-Create a `.env` file in the `server/` directory and include:
-
-```
-MONGO_URI=your_mongodb_connection_string
-PORT=5000
-EMAIL_USER=your_email@example.com
-EMAIL_PASS=your_email_password_or_app_password
-CLIENT_URL=http://localhost:5173
-```
-
-For the frontend, if needed, create a `.env` file in `client/`:
-
-```
-VITE_API_URL=http://localhost:5000
-```
-
----
-
-## Future Enhancements
-
-- 📚 Integration with cloud storage (Google Drive, OneDrive)
-- 🧾 Export notes to PDF or Word
-- 📈 Dashboard for tracking study progress
-- 🎧 Multiple language support for transcription
-- 🧩 Collaboration features for group study
-
----
+Backend will start on [http://localhost:4000](http://localhost:4000)
 
 ## Contributing
 
@@ -128,14 +96,3 @@ To contribute:
 
 ---
 
-## License
-
-This project is licensed under the **MIT License** — see the [LICENSE](./LICENSE) file for details.
-
----
-
-## Contact
-
-**Team StuNotes**
-📧 Email: [support@stunotes.com](mailto:support@stunotes.com)
-🌐 Website: [www.stunotes.com](https://www.stunotes.com)
