@@ -22,17 +22,17 @@ With StuNotes, students can:
 
 ### **Frontend**
 
-- [React.js](https://react.dev/) — Modern UI framework
-- [Tailwind CSS](https://tailwindcss.com/) — Utility-first styling
-- [shadcn/ui](https://ui.shadcn.com/) — Elegant, accessible UI components
-- [Speech Recognition Library](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) — For live transcription and voice input
+- React.js — Modern UI framework
+- Tailwind CSS — Utility-first styling
+- shadcn/ui— Elegant, accessible UI components
+- Speech Recognition Library — For live transcription and voice input
 
 ### **Backend**
 
-- [Node.js](https://nodejs.org/) — Server-side JavaScript runtime
-- [MongoDB](https://www.mongodb.com/) — NoSQL database for storing users and notes
-- [Nodemailer](https://nodemailer.com/) — Handles email sending and verification
-- Email Verification Flow — Ensures secure and verified access
+- Node.js— Server-side JavaScript runtime
+- MongoDB— NoSQL database for storing users and notes
+- Nodemailer— Handles email sending and verification
+- Gemini API 2.5 Flash — Powers AI-driven features like quiz generation, content summarization, and smart note enhancement
 
 ---
 
@@ -84,16 +84,4 @@ npm run dev
 
 Backend will start on [http://localhost:4000](http://localhost:4000)
 
-## Contributing
-
-We welcome contributions!
-To contribute:
-
-1. Fork the repository.
-2. Create a new branch: `git checkout -b feature/your-feature-name`.
-3. Commit your changes: `git commit -m "Add your feature"`.
-4. Push to the branch: `git push origin feature/your-feature-name`.
-5. Open a Pull Request.
-
----
 
