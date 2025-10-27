@@ -24,7 +24,8 @@ With StuNotes, students can:
 
 - [React.js](https://react.dev/) — Modern UI framework
 - [Tailwind CSS](https://tailwindcss.com/) — Utility-first styling
-- [shadcn/ui](https://ui.shadcn.com/) — Elegant, accessible UI components -[Speech Recognition Library](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) — For live transcription and voice input
+- [shadcn/ui](https://ui.shadcn.com/) — Elegant, accessible UI components
+- [Speech Recognition Library](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) — For live transcription and voice input
 
 ### **Backend**
 
@@ -46,7 +47,7 @@ With StuNotes, students can:
 
 ---
 
-## ⚙️ Installation & Setup
+## Installation & Setup
 
 ### **Prerequisites**
 
