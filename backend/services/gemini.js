@@ -2,10 +2,10 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import "dotenv/config";
 
 async function generateAIResponse(prompt, forQuiz) {
-  // Initialize the generative AI model with your API key
+  
   const genAI = new GoogleGenerativeAI(process.env.geminiApiKey);
 
-  // Use the model you want (gemini-2.5-flash, etc.)
+ 
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   try {
@@ -16,7 +16,7 @@ async function generateAIResponse(prompt, forQuiz) {
     //     prompt;
 
     const finalPrompt = forQuiz
-      ? `Generate exactly 20 multiple choice questions from the given content. Return ONLY a JSON array with this exact format:
+      ? `Generate 10 unique and non-repetative multiple choice questions from the given content. Return ONLY a JSON array with this exact format and remember question shouldn't be similar in any way to each other:
             [
               {
                 "question": "Your question here?",
