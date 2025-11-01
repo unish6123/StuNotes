@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Play, MoreVertical, Eye, FileText } from "lucide-react";
 import DeleteDialog from "./DeleteDialog";
+import { marked } from "marked";
+import { useMemo } from "react";
 
 export default function TranscriptCard({
   transcript,
@@ -19,6 +21,23 @@ export default function TranscriptCard({
   quizLoading,
   onGenerateQuiz,
 }) {
+  const previewText = useMemo(() => {
+    if (!transcript?.content) return "";
+
+    // Parse markdown to HTML
+    const html = marked.parse(transcript.content, { breaks: true, gfm: true });
+
+    // Strip HTML tags to get plain text for preview
+    const text = html
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const textarea = document.createElement("textarea");
+    textarea.innerHTML = text;
+    return textarea.value;
+  }, [transcript?.content]);
+
   return (
     <Card
       className="h-[200px] bg-card border-border hover:shadow-md transition-shadow cursor-pointer"
@@ -59,7 +78,7 @@ export default function TranscriptCard({
 
         <div className="flex-1 mt-3 mb-3">
           <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-            {transcript.content}
+            {previewText}
           </p>
         </div>
 
