@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Play, MoreVertical, Eye, Edit, FileText } from "lucide-react";
 import DeleteDialog from "./DeleteDialog";
+import { marked } from "marked";
+import { useMemo } from "react";
 
 export default function NoteCard({
   note,
@@ -18,6 +20,23 @@ export default function NoteCard({
   onDelete,
   deleteLoading,
 }) {
+  const previewText = useMemo(() => {
+    if (!note?.content) return "";
+
+    // Parse markdown to HTML
+    const html = marked.parse(note.content, { breaks: true, gfm: true });
+
+    // Strip HTML tags to get plain text for preview
+    const text = html
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const textarea = document.createElement("textarea");
+    textarea.innerHTML = text;
+    return textarea.value;
+  }, [note?.content]);
+
   return (
     <Card
       className="h-[200px] bg-card border-border hover:shadow-md transition-shadow cursor-pointer"
@@ -62,7 +81,7 @@ export default function NoteCard({
 
         <div className="flex-1 mt-4 mb-4">
           <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-            {note.content}
+            {previewText}
           </p>
         </div>
 
