@@ -43,7 +43,7 @@ With StuNotes, students can:
 - **AI-Powered Quiz Generation** — Automatically generate quizzes to reinforce understanding.
 - **Email Verification** — Secure signup/login using email validation.
 - **Modern UI** — Responsive and accessible design using TailwindCSS + shadcn/ui.
-- MongoDB Integration\*\* — Store notes, user data, and transcriptions efficiently.
+- **MongoDB Integration** — Store notes, user data, and transcriptions efficiently.
 
 ---
 
