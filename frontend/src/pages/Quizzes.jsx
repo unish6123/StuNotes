@@ -518,36 +518,55 @@ export default function Quizzes() {
 
   const saveQuizScore = async (score) => {
     try {
+      console.log(" Saving quiz score:", {
+        title: activeQuiz.title,
+        score,
+        totalQuestions: activeQuiz.questions.length,
+      });
+
+      const payload = {
+        title: activeQuiz.title,
+        score: score,
+      };
+
+      console.log(" Sending payload to:", `${backendURL}/api/transcribe/score`);
+      console.log(" Payload:", payload);
+
       const response = await fetch(`${backendURL}/api/transcribe/score`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({
-          quizTitle: activeQuiz.title,
-          score: score,
-          totalQuestions: activeQuiz.questions.length,
-          correctAnswers: Math.round(
-            (score / 100) * activeQuiz.questions.length
-          ),
-          quizType:
-            activeQuiz.sourceType ||
-            (activeQuiz.title.includes("AI Quiz") ? "ai" : "content"),
-          sourceTitle: activeQuiz.sourceTitle || selectedSource,
-          completedAt: new Date().toISOString(),
-          timeTaken: Math.ceil(activeQuiz.questions.length * 1.5),
-        }),
+        body: JSON.stringify(payload),
       });
 
+      console.log(" Response status:", response.status);
+      console.log(" Response ok:", response.ok);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(" Backend error response:", errorText);
+        throw new Error(
+          `HTTP error! status: ${response.status} - ${errorText}`
+        );
+      }
+
       const data = await response.json();
+      console.log(" Backend response data:", data);
+
       if (data.success) {
-        console.log("Quiz score saved successfully");
-        toast.success("Quiz score saved to your analytics!");
+        console.log(" Quiz score saved successfully");
+        toast.success("Quiz score saved!");
+      } else {
+        console.error(" Backend returned success: false", data);
+        toast.error(
+          "Failed to save quiz score: " + (data.message || "Unknown error")
+        );
       }
     } catch (error) {
-      console.error("Error saving quiz score:", error);
-      toast.error("Failed to save quiz score");
+      console.error(" Error saving quiz score:", error);
+      toast.error("Failed to save quiz score: " + error.message);
     }
   };
 
