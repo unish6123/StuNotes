@@ -6,6 +6,7 @@ import {
   getTranscribedNotes,
   getQuiz,
   saveQuizScore,
+  quizAnalysis,
   updateNote,
   delNote,
 } from "../controller/transcribeNoteController.js";
@@ -18,6 +19,7 @@ tNotesRouter.get("/getTranscribedNotes", userAuth, getTranscribedNotes);
 tNotesRouter.get("/getNotes", userAuth, getSavedTNotes);
 tNotesRouter.post("/getQuiz", userAuth, getQuiz);
 tNotesRouter.post("/score", userAuth, saveQuizScore);
+tNotesRouter.post("/quizAnalysis", userAuth, quizAnalysis);
 tNotesRouter.post("/saveNotes", userAuth, saveNotes);
 tNotesRouter.put("/updateNote", userAuth, updateNote);
 tNotesRouter.delete("/deleteNote/:title", userAuth, delNote);
