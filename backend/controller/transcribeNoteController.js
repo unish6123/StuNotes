@@ -33,14 +33,29 @@ const saveNotes = async (req, res) => {
     const { title, content } = req.body;
     const userId = req.user.id;
 
- 
+    // console.log(" saveNotes called with:", {
+    //   userId,
+    //   title,
+    //   contentLength: content?.length,
+    // });
+
     if (!title || !content) {
       return res.json({ success: false, message: "Missing title or the note" });
     }
 
     const notes = new noteModel({ userId, title, content, type: "manual" });
-    
+    // console.log(" Created note instance:", {
+    //   model: notes.constructor.modelName,
+    //   collection: notes.constructor.collection.name,
+    //   type: notes.type,
+    // });
+
     await notes.save();
+    // console.log(
+    //   " Note saved successfully to collection:",
+    //   notes.constructor.collection.name
+    // );
+
     res.json({ success: true, message: "Notes saved to the database" });
   } catch (error) {
     console.error(" saveNotes error:", error);
@@ -96,11 +111,22 @@ const getSavedTNotes = async (req, res) => {
     const manualNotes = await noteModel
       .find({ userId })
       .sort({ createdAt: -1 });
-    
+    // console.log(
+    //   " Found manual notes:",
+    //   manualNotes.length,
+    //   "from collection:",
+    //   noteModel.collection.name
+    // );
 
     const transcribedNotes = await transcribeModel
       .find({ userId })
       .sort({ createdAt: -1 });
+    // console.log(
+    //   " Found transcribed notes:",
+    //   transcribedNotes.length,
+    //   "from collection:",
+    //   transcribeModel.collection.name
+    // );
 
     const allNotes = [
       ...manualNotes.map((note) => {
@@ -113,6 +139,7 @@ const getSavedTNotes = async (req, res) => {
       }),
     ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
+    // console.log(" Returning total notes:", allNotes.length);
     res.json({ success: true, notes: allNotes });
   } catch (err) {
     console.error(" getSavedTNotes error:", err);
@@ -192,51 +219,54 @@ const updateNote = async (req, res) => {
   }
 };
 
-
-
 const quizAnalysis = async (req, res) => {
   try {
     const userId = req.user.id;
     const { title } = req.body;
 
+    // console.log(" quizAnalysis called with:", {
+    //   userId,
+    //   title,
+    //   titleType: typeof title,
+    //   titleLength: title?.length,
+    // });
+
     if (!title) {
-      return res.status(400).json({ success: false, message: "Missing title!" });
+      return res.json({ success: false, message: "Title is required" });
     }
 
-    // sorts oldest to newest
-    const quizzes = await quizModel.find({ userId, title }).sort({ createdAt: 1 }); 
-    
+    const allUserQuizzes = await quizModel.find({ userId });
+    // console.log(" All quizzes for user (total):", allUserQuizzes.length);
+    // allUserQuizzes.forEach((q, idx) => {
+    //   // console.log(` Quiz ${idx + 1}:`, {
+    //   //   title: q.title,
+    //   //   titleLength: q.title.length,
+    //   //   score: q.score,
+    //   //   date: q.createdAt,
+    //   //   matches: q.title === title,
+    //   //   titleComparison: `"${q.title}" vs "${title}"`,
+    //   // });
+    // });
 
-    if (quizzes.length === 0) {
-      return res.status(404).json({ success: false, message: "No quiz data found for this title." });
+    const quizScores = await quizModel
+      .find({ userId, title })
+      .sort({ createdAt: -1 });
+    // console.log(" Found quiz scores for exact title match:", quizScores.length);
+
+    if (!quizScores || quizScores.length === 0) {
+      return res.json({
+        success: true,
+        quizzes: [],
+        message: "No quiz data found for this title.",
+      });
     }
 
-    // returns array of scores and dates
-    const data = quizzes.map(q => ({
-      score: q.score,
-      date: q.createdAt,
-    }));
-
-    return res.status(200).json({
-      success: true,
-      title,
-      count: data.length,
-      data, // array of { score, date }
-    });
-
+    return res.json({ success: true, quizzes: quizScores });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: error.message,
-    });
+    console.error(" quizAnalysis error:", error);
+    return res.json({ success: false, message: error.message });
   }
 };
-
-export default quizAnalysis;
-
-
 
 export {
   saveTNotes,
@@ -247,4 +277,5 @@ export {
   saveQuizScore,
   delNote,
   updateNote,
+  quizAnalysis,
 };

@@ -268,7 +268,7 @@ export default function Quizzes() {
       }
 
       setGeneratedQuiz({
-        title: `AI Quiz: ${selectedSource}`,
+        title: selectedSource, // Remove "AI Quiz: " prefix to match note title
         questions: formattedQuestions,
       });
 
@@ -421,7 +421,7 @@ export default function Quizzes() {
       }
 
       setContentQuiz({
-        title: `Quiz: ${content.title}`,
+        title: content.title, // Remove "Quiz: " prefix to match note title
         questions: formattedQuestions,
         sourceType: content.type,
         sourceTitle: content.title,
@@ -518,14 +518,22 @@ export default function Quizzes() {
 
   const saveQuizScore = async (score) => {
     try {
+      let quizTitle = activeQuiz.title;
+      if (quizTitle.startsWith("AI Quiz: ")) {
+        quizTitle = quizTitle.replace("AI Quiz: ", "");
+      } else if (quizTitle.startsWith("Quiz: ")) {
+        quizTitle = quizTitle.replace("Quiz: ", "");
+      }
+
       console.log(" Saving quiz score:", {
-        title: activeQuiz.title,
+        originalTitle: activeQuiz.title,
+        cleanedTitle: quizTitle,
         score,
         totalQuestions: activeQuiz.questions.length,
       });
 
       const payload = {
-        title: activeQuiz.title,
+        title: quizTitle,
         score: score,
       };
 

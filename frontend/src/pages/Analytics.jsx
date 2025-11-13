@@ -15,9 +15,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ResponsiveLine } from "@nivo/line";
-import { ResponsiveBar } from "@nivo/bar";
-import { ResponsivePie } from "@nivo/pie";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import {
   TrendingUp,
   TrendingDown,
@@ -28,80 +40,141 @@ import {
   BarChart3,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { toast } from "sonner";
+import Pagination from "../components/Pagination";
 
 export default function Analytics() {
   const [quizData, setQuizData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState("7d");
-  const [selectedMetric, setSelectedMetric] = useState("score");
+  const [error, setError] = useState(null);
   const { user } = useAuth();
+  const [timeRange, setTimeRange] = useState("all"); // Declare timeRange and setTimeRange
+  const [currentPage, setCurrentPage] = useState(1);
   const backendURL = import.meta.env.VITE_BACKEND_URL;
+  const itemsPerPage = 4;
 
   useEffect(() => {
-    if (user) {
-      fetchQuizAnalytics();
-    }
-  }, [user, timeRange]);
-
-  const fetchQuizAnalytics = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(
-        `${backendURL}/api/transcribe/analytics?range=${timeRange}`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
-      const data = await response.json();
-      if (data.success) {
-        setQuizData(data.analytics);
+    const fetchQuizData = async () => {
+      if (!user) {
+        return;
       }
-    } catch (error) {
-      console.error("Error fetching analytics:", error);
-      toast.error("Failed to load analytics");
-    } finally {
-      setLoading(false);
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const notesRes = await fetch(`${backendURL}/api/transcribe/getNotes`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        });
+
+        if (!notesRes.ok) throw new Error("Failed to fetch notes");
+
+        const notesData = await notesRes.json();
+
+        if (!notesData.success) throw new Error("Failed to get notes");
+
+        const titles = [...new Set(notesData.notes.map((note) => note.title))];
+
+        const allQuizzes = [];
+        for (const title of titles) {
+          try {
+            const analysisRes = await fetch(
+              `${backendURL}/api/transcribe/quizAnalysis`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ title }),
+              }
+            );
+
+            if (analysisRes.ok) {
+              const analysisData = await analysisRes.json();
+
+              if (
+                analysisData.success &&
+                analysisData.quizzes &&
+                analysisData.quizzes.length > 0
+              ) {
+                const quizzesForTitle = analysisData.quizzes.map((item) => ({
+                  title: title,
+                  score: item.score,
+                  createdAt: item.createdAt,
+                }));
+                allQuizzes.push(...quizzesForTitle);
+              }
+            }
+          } catch (err) {
+            // Silently skip failed quiz analysis
+          }
+        }
+
+        allQuizzes.sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        );
+        setQuizData(allQuizzes);
+      } catch (err) {
+        console.error("Error fetching quiz data:", err);
+        setError(err.message || "Failed to load quiz analytics");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuizData();
+  }, [user]);
+
+  const filteredQuizData = quizData.filter((quiz) => {
+    const quizDate = new Date(quiz.createdAt);
+    const now = new Date();
+    const daysDiff = (now - quizDate) / (1000 * 60 * 60 * 24);
+
+    switch (timeRange) {
+      case "7d":
+        return daysDiff <= 7;
+      case "30d":
+        return daysDiff <= 30;
+      case "90d":
+        return daysDiff <= 90;
+      case "all":
+      default:
+        return true;
     }
-  };
+  });
 
   // Calculate metrics
-  const totalQuizzes = quizData.length;
+  const totalQuizzes = filteredQuizData.length;
   const averageScore =
     totalQuizzes > 0
       ? Math.round(
-          quizData.reduce((sum, quiz) => sum + quiz.score, 0) / totalQuizzes
+          filteredQuizData.reduce((sum, quiz) => sum + quiz.score, 0) /
+            totalQuizzes
         )
       : 0;
   const highestScore =
-    totalQuizzes > 0 ? Math.max(...quizData.map((q) => q.score)) : 0;
+    totalQuizzes > 0 ? Math.max(...filteredQuizData.map((q) => q.score)) : 0;
   const improvementTrend = calculateTrend();
 
   function calculateTrend() {
-    if (quizData.length < 2) return 0;
+    if (filteredQuizData.length < 2) return 0;
     const recent =
-      quizData.slice(-5).reduce((sum, q) => sum + q.score, 0) /
-      Math.min(5, quizData.length);
+      filteredQuizData.slice(-5).reduce((sum, q) => sum + q.score, 0) /
+      Math.min(5, filteredQuizData.length);
     const older =
-      quizData.slice(0, -5).reduce((sum, q) => sum + q.score, 0) /
-      Math.max(1, quizData.length - 5);
+      filteredQuizData.slice(0, -5).reduce((sum, q) => sum + q.score, 0) /
+      Math.max(1, filteredQuizData.length - 5);
     return Math.round(recent - older);
   }
 
-  // Prepare chart data
-  const lineChartData = [
-    {
-      id: "Quiz Scores",
-      data: quizData.map((quiz, index) => ({
-        x: index + 1,
-        y: quiz.score,
-        date: new Date(quiz.createdAt).toLocaleDateString(),
-      })),
-    },
-  ];
+  // Prepare chart data for Recharts
+  const lineChartData = filteredQuizData.map((quiz, index) => ({
+    name: `Q${index + 1}`,
+    score: quiz.score,
+    date: new Date(quiz.createdAt).toLocaleDateString(),
+  }));
 
-  const barChartData = quizData.reduce((acc, quiz) => {
+  const barChartData = filteredQuizData.reduce((acc, quiz) => {
     const scoreRange = Math.floor(quiz.score / 10) * 10;
     const range = `${scoreRange}-${scoreRange + 9}%`;
     acc[range] = (acc[range] || 0) + 1;
@@ -111,37 +184,30 @@ export default function Analytics() {
   const barData = Object.entries(barChartData).map(([range, count]) => ({
     range,
     count,
-    color: range.startsWith("9")
-      ? "#10b981"
-      : range.startsWith("8")
-      ? "#3b82f6"
-      : range.startsWith("7")
-      ? "#f59e0b"
-      : "#ef4444",
   }));
 
   const pieData = [
     {
-      id: "Excellent (90-100%)",
-      value: quizData.filter((q) => q.score >= 90).length,
-      color: "#10b981",
+      name: "Excellent (90-100%)",
+      value: filteredQuizData.filter((q) => q.score >= 90).length,
     },
     {
-      id: "Good (80-89%)",
-      value: quizData.filter((q) => q.score >= 80 && q.score < 90).length,
-      color: "#3b82f6",
+      name: "Good (80-89%)",
+      value: filteredQuizData.filter((q) => q.score >= 80 && q.score < 90)
+        .length,
     },
     {
-      id: "Fair (70-79%)",
-      value: quizData.filter((q) => q.score >= 70 && q.score < 80).length,
-      color: "#f59e0b",
+      name: "Fair (70-79%)",
+      value: filteredQuizData.filter((q) => q.score >= 70 && q.score < 80)
+        .length,
     },
     {
-      id: "Needs Work (<70%)",
-      value: quizData.filter((q) => q.score < 70).length,
-      color: "#ef4444",
+      name: "Needs Work (<70%)",
+      value: filteredQuizData.filter((q) => q.score < 70).length,
     },
   ].filter((item) => item.value > 0);
+
+  const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444"];
 
   if (loading) {
     return (
@@ -159,6 +225,30 @@ export default function Analytics() {
       </div>
     );
   }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-6xl min-h-screen bg-background">
+        <Card className="text-center py-12 border-red-200 bg-red-50">
+          <CardContent>
+            <div className="text-red-600 mb-4">Error loading analytics</div>
+            <p className="text-red-500 mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()} variant="outline">
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const recentQuizzes = filteredQuizData.slice().reverse();
+  const totalPages = Math.ceil(recentQuizzes.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedQuizzes = recentQuizzes.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl min-h-screen bg-background">
@@ -284,45 +374,21 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <div className="h-80">
-                  <ResponsiveLine
-                    data={lineChartData}
-                    margin={{ top: 20, right: 20, bottom: 60, left: 60 }}
-                    xScale={{ type: "linear" }}
-                    yScale={{ type: "linear", min: 0, max: 100 }}
-                    curve="monotoneX"
-                    axisTop={null}
-                    axisRight={null}
-                    axisBottom={{
-                      tickSize: 5,
-                      tickPadding: 5,
-                      tickRotation: 0,
-                      legend: "Quiz Number",
-                      legendOffset: 36,
-                      legendPosition: "middle",
-                    }}
-                    axisLeft={{
-                      tickSize: 5,
-                      tickPadding: 5,
-                      tickRotation: 0,
-                      legend: "Score (%)",
-                      legendOffset: -40,
-                      legendPosition: "middle",
-                    }}
-                    colors={["#3b82f6"]}
-                    pointSize={8}
-                    pointColor={{ theme: "background" }}
-                    pointBorderWidth={2}
-                    pointBorderColor={{ from: "serieColor" }}
-                    enableGridX={false}
-                    enableGridY={true}
-                    useMesh={true}
-                    theme={{
-                      background: "transparent",
-                      text: { fill: "#a1a1aa" },
-                      axis: { ticks: { text: { fill: "#a1a1aa" } } },
-                      grid: { line: { stroke: "#262626" } },
-                    }}
-                  />
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={lineChartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis domain={[0, 100]} />
+                      <Tooltip />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="score"
+                        stroke="#3b82f6"
+                        name="Score (%)"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
@@ -337,39 +403,20 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <div className="h-80">
-                  <ResponsiveBar
-                    data={barData}
-                    keys={["count"]}
-                    indexBy="range"
-                    margin={{ top: 20, right: 20, bottom: 60, left: 60 }}
-                    padding={0.3}
-                    colors={({ data }) => data.color}
-                    axisTop={null}
-                    axisRight={null}
-                    axisBottom={{
-                      tickSize: 5,
-                      tickPadding: 5,
-                      tickRotation: -45,
-                      legend: "Score Range",
-                      legendOffset: 50,
-                      legendPosition: "middle",
-                    }}
-                    axisLeft={{
-                      tickSize: 5,
-                      tickPadding: 5,
-                      tickRotation: 0,
-                      legend: "Number of Quizzes",
-                      legendOffset: -40,
-                      legendPosition: "middle",
-                    }}
-                    enableGridY={true}
-                    theme={{
-                      background: "transparent",
-                      text: { fill: "#a1a1aa" },
-                      axis: { ticks: { text: { fill: "#a1a1aa" } } },
-                      grid: { line: { stroke: "#262626" } },
-                    }}
-                  />
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={barData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="range" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar
+                        dataKey="count"
+                        fill="#3b82f6"
+                        name="Number of Quizzes"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
@@ -386,27 +433,36 @@ export default function Analytics() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-64">
-                  <ResponsivePie
-                    data={pieData}
-                    margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-                    innerRadius={0.5}
-                    padAngle={0.7}
-                    cornerRadius={3}
-                    colors={({ data }) => data.color}
-                    borderWidth={1}
-                    borderColor={{
-                      from: "color",
-                      modifiers: [["darker", 0.2]],
-                    }}
-                    enableArcLinkLabels={false}
-                    arcLabelsSkipAngle={10}
-                    arcLabelsTextColor="#ffffff"
-                    theme={{
-                      background: "transparent",
-                      text: { fill: "#ffffff" },
-                    }}
-                  />
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        style={{ fontSize: "14px", fontWeight: "600" }}
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend
+                        verticalAlign="bottom"
+                        height={36}
+                        wrapperStyle={{ fontSize: "14px" }}
+                        formatter={(value, entry) =>
+                          `${value}: ${entry.payload.value}`
+                        }
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
@@ -418,16 +474,14 @@ export default function Analytics() {
                 <CardDescription>Your latest quiz performances</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {quizData
-                    .slice(-5)
-                    .reverse()
-                    .map((quiz, index) => (
+                <div className="space-y-3">
+                  {paginatedQuizzes.length > 0 ? (
+                    paginatedQuizzes.map((quiz, idx) => (
                       <div
-                        key={quiz._id}
-                        className="flex items-center justify-between p-4 rounded-lg border"
+                        key={idx}
+                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 rounded-lg border gap-2 sm:gap-4"
                       >
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3">
                           <div className="flex-shrink-0">
                             <Badge
                               variant={
@@ -437,29 +491,54 @@ export default function Analytics() {
                                   ? "secondary"
                                   : "destructive"
                               }
+                              className="text-sm"
                             >
                               {quiz.score}%
                             </Badge>
                           </div>
-                          <div>
-                            <p className="font-medium">{quiz.title}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium truncate sm:whitespace-normal">
+                              {quiz.title}
+                            </p>
                             <p className="text-sm text-muted-foreground">
-                              {quiz.correctAnswers}/{quiz.totalQuestions}{" "}
-                              correct
+                              {new Date(quiz.createdAt).toLocaleDateString()}
+                              <span className="sm:hidden">
+                                {" "}
+                                •{" "}
+                                {new Date(quiz.createdAt).toLocaleTimeString(
+                                  [],
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }
+                                )}
+                              </span>
                             </p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(quiz.createdAt).toLocaleDateString()}
-                          </p>
+                        <div className="hidden sm:block text-right flex-shrink-0">
                           <p className="text-xs text-muted-foreground">
                             {new Date(quiz.createdAt).toLocaleTimeString()}
                           </p>
                         </div>
                       </div>
-                    ))}
+                    ))
+                  ) : (
+                    <p className="text-center text-muted-foreground">
+                      No quizzes in this time range
+                    </p>
+                  )}
                 </div>
+                {recentQuizzes.length > itemsPerPage && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    itemsPerPage={itemsPerPage}
+                    totalItems={recentQuizzes.length}
+                    itemName="quizzes"
+                  />
+                )}
               </CardContent>
             </Card>
           </div>
