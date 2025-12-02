@@ -14,7 +14,7 @@ StuNotes is a modern web application designed to make studying more effective an
 
 Watch our comprehensive demo showcasing all features of StuNotes:
 
-[📹 Watch Demo Video](./demo/demo-video.mp4)
+[📹 Watch Demo Video](./demo-video.mp4)
 
 *Click the link above to watch the full demonstration of StuNotes in action.*
 
