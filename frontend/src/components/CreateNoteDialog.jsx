@@ -68,7 +68,7 @@ export default function CreateNoteDialog({ isOpen, onClose, onSave, loading }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="w-[90%] max-w-4xl sm:min-w-[72%]">
+      <DialogContent className="my-10 sm:my-0 w-[90%] sm:max-w-4xl sm:min-w-[72%]">
         <DialogHeader>
           <DialogTitle>Create New Note</DialogTitle>
           <DialogDescription>
