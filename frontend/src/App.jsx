@@ -8,6 +8,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import Transcribe from "./pages/Transcribe";
 import Notes from "./pages/Notes";
+import Enhance from "./pages/Enhance";
 import Quizzes from "./pages/Quizzes";
 import Analytics from "./pages/Analytics";
 import Footer from "./components/Footer";
@@ -42,6 +43,14 @@ function App() {
               <ProtectedRoute>
                 <Notes />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/enhance"
+            element={
+              
+                <Enhance />
+            
             }
           />
           <Route
